@@ -6,14 +6,6 @@ Mopidy-YTMusic
     :target: https://pypi.org/project/Mopidy-YTMusic/
     :alt: Latest PyPI version
 
-.. image:: https://img.shields.io/circleci/build/gh/OzymandiasTheGreat/mopidy-ytmusic
-    :target: https://circleci.com/gh/OzymandiasTheGreat/mopidy-ytmusic
-    :alt: CircleCI build status
-
-.. image:: https://img.shields.io/codecov/c/gh/OzymandiasTheGreat/mopidy-ytmusic
-    :target: https://codecov.io/gh/OzymandiasTheGreat/mopidy-ytmusic
-    :alt: Test coverage
-
 Mopidy extension for playing music from YouTube Music
 
 
@@ -34,7 +26,10 @@ Before starting Mopidy, you must add configuration for
 Mopidy-YTMusic to your Mopidy configuration file::
 
     [ytmusic]
-    # TODO: Add example of extension config
+    auth_json = ./auth.json
+
+To acquire auth.json file run `mopidy ytmusic setup` and follow instructions
+in the terminal.
 
 
 Project resources
