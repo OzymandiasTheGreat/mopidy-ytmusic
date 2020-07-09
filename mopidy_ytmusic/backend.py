@@ -260,7 +260,7 @@ def parseSearch(results, field=None, queries=[]):
                 track_no=None,
                 disc_no=None,
                 date="1999",
-                length=(length[0] * 60 * 1000) + (length[1] * 1000),
+                length=(int(length[0]) * 60 * 1000) + (int(length[1]) * 1000),
                 bitrate=0,
                 comment="",
                 musicbrainz_id="",
