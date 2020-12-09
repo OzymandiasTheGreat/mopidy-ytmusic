@@ -160,7 +160,7 @@ def uploadAlbumToTracks(album, id_):
         uri=f"ytm:album?id={id_}&upload=true",
         name=album["title"],
         artists=artists,
-        num_tracks=int(album["trackCount"]),
+        num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
         num_discs=None,
         date=album["year"],
         musicbrainz_id="",
@@ -198,7 +198,7 @@ def albumToTracks(album, id_):
         uri=f"ytm:album?id={id_}&upload=false",
         name=album["title"],
         artists=artists,
-        num_tracks=int(album["trackCount"]),
+        num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
         num_discs=None,
         date=date,
         musicbrainz_id="",
@@ -212,10 +212,10 @@ def albumToTracks(album, id_):
             composers=[],
             performers=[],
             genre="",
-            track_no=song["index"],
+            track_no=int(song["index"]) if str(song["index"]).isnumeric() else None,
             disc_no=None,
             date=date,
-            length=int(song["lengthMs"]),
+            length=int(song["lengthMs"]) if str(song["lengthMs"]).isnumeric() else None,
             bitrate=0,
             comment="",
             musicbrainz_id="",
@@ -230,7 +230,10 @@ def parseSearch(results, field=None, queries=[]):
         if result["resultType"] == "song":
             if field == "track" and not any(q.casefold() == result["title"].casefold() for q in queries):
                 continue
-            length = result["duration"].split(":")
+            try:
+                length = [int(i) for i in result["duration"].split(":")]
+            except ValueError:
+                length = [0, 0]
             track = Track(
                 uri=f"ytm:video?id={result['videoId']}",
                 name=result["title"],
@@ -253,14 +256,14 @@ def parseSearch(results, field=None, queries=[]):
                     num_discs=None,
                     date="1999",
                     musicbrainz_id="",
-                ),
+                ) if "album" in result else None,
                 composers=[],
                 performers=[],
                 genre="",
                 track_no=None,
                 disc_no=None,
                 date="1999",
-                length=(int(length[0]) * 60 * 1000) + (int(length[1]) * 1000),
+                length=(length[0] * 60 * 1000) + (length[1] * 1000),
                 bitrate=0,
                 comment="",
                 musicbrainz_id="",
@@ -282,7 +285,7 @@ def parseSearch(results, field=None, queries=[]):
                     uri=f"ytm:album?id={result['browseId']}&upload=false",
                     name=album["title"],
                     artists=artists,
-                    num_tracks=int(album["trackCount"]),
+                    num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
                     num_discs=None,
                     date=f"{album['releaseDate']['year']}-{album['releaseDate']['month']}-{album['releaseDate']['day']}",
                     musicbrainz_id="",
@@ -297,10 +300,10 @@ def parseSearch(results, field=None, queries=[]):
                             composers=[],
                             performers=[],
                             genre="",
-                            track_no=int(song["index"]),
+                            track_no=int(song["index"]) if str(song["index"]).isnumeric() else None,
                             disc_no=None,
                             date=albumObj.date,
-                            length=int(song["lengthMs"]),
+                            length=int(song["lengthMs"]) if str(song["lengthMs"]).isnumeric() else None,
                             bitrate=0,
                             comment="",
                             musicbrainz_id="",
@@ -329,7 +332,7 @@ def parseSearch(results, field=None, queries=[]):
                         uri=f"ytm:album?id={album['browseId']}&upload=false",
                         name=album["title"],
                         artists=artists,
-                        num_tracks=int(songs["trackCount"]),
+                        num_tracks=int(songs["trackCount"]) if str(songs["trackCount"]).isnumeric() else None,
                         num_discs=None,
                         date=f"{songs['releaseDate']['year']}-{songs['releaseDate']['month']}-{songs['releaseDate']['day']}",
                         musicbrainz_id="",
@@ -344,10 +347,10 @@ def parseSearch(results, field=None, queries=[]):
                                 composers=[],
                                 performers=[],
                                 genre="",
-                                track_no=int(song["index"]),
+                                track_no=int(song["index"]) if str(song["index"]).isnumeric() else None,
                                 disc_no=None,
                                 date=albumObj.date,
-                                length=int(song["lengthMs"]),
+                                length=int(song["lengthMs"]) if str(song["lengthMs"]).isnumeric() else None,
                                 bitrate=0,
                                 comment="",
                                 musicbrainz_id="",
@@ -424,36 +427,36 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
             except Exception:
                 logger.exception("YTMusic failed getting artists from library")
                 library_artists = []
-            try:
-                upload_artists = [
-                    Ref.artist(uri=f"ytm:artist?id={a['browseId']}&upload=true", name=a["artist"])
-                    for a in API.get_library_upload_artists(limit=100)
-                ]
-                logger.info("YTMusic found %d uploaded artists", len(upload_artists))
-            except Exception:
-                logger.exception("YTMusic failed getting uploaded artists")
-                upload_artists = []
-            return library_artists + upload_artists
+            # try:
+            #     upload_artists = [
+            #         Ref.artist(uri=f"ytm:artist?id={a['browseId']}&upload=true", name=a["artist"])
+            #         for a in API.get_library_upload_artists(limit=100)
+            #     ]
+            #     logger.info("YTMusic found %d uploaded artists", len(upload_artists))
+            # except Exception:
+            #     logger.exception("YTMusic failed getting uploaded artists")
+            #     upload_artists = []
+            return library_artists  # + upload_artists
         elif uri == "ytm:album":
             try:
                 library_albums = [
-                    Ref.album(uri=f"ytm:album?id={a['browseId']}&upload=false", name=a["album"])
+                    Ref.album(uri=f"ytm:album?id={a['browseId']}&upload=false", name=a["title"])
                     for a in API.get_library_albums(limit=100)
                 ]
                 logger.info("YTMusic found %d albums in library", len(library_albums))
             except Exception:
                 logger.exception("YTMusic failed getting albums from library")
                 library_albums = []
-            try:
-                upload_albums = [
-                    Ref.album(uri=f"ytm:album?id={a['browseId']}&upload=true", name=a["title"])
-                    for a in API.get_library_upload_albums(limit=100)
-                ]
-                logger.info("YTMusic found %d uploaded albums", len(upload_albums))
-            except Exception:
-                logger.exception("YTMusic failed getting uploaded albums")
-                upload_albums = []
-            return library_albums + upload_albums
+            # try:
+            #     upload_albums = [
+            #         Ref.album(uri=f"ytm:album?id={a['browseId']}&upload=true", name=a["title"])
+            #         for a in API.get_library_upload_albums(limit=100)
+            #     ]
+            #     logger.info("YTMusic found %d uploaded albums", len(upload_albums))
+            # except Exception:
+            #     logger.exception("YTMusic failed getting uploaded albums")
+            #     upload_albums = []
+            return library_albums  # + upload_albums
         elif uri == "ytm:liked":
             try:
                 res = API.get_liked_songs(limit=100)
@@ -467,52 +470,52 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 logger.exception("YTMusic failed getting liked songs")
         elif uri.startswith("ytm:artist?"):
             id_, upload = parse_uri(uri)
-            if upload:
-                try:
-                    res = API.get_library_upload_artist(id_)
-                    uploadArtistToTracks(res)
-                    return [
-                        Ref.track(uri=f"ytm:album?id={t['videoId']}", name=t["title"])
-                        for t in res
-                    ]
-                    logger.info("YTMusic found %d songs for uploaded artist \"%s\"", len(res), res[0]["artist"]["name"])
-                except Exception:
-                    logger.exception("YTMusic failed getting tracks for uploaded artist \"%s\"", res[0]["artist"]["name"])
-            else:
-                try:
-                    res = API.get_artist(id_)
-                    artistToTracks(res)
-                    return [
-                        Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
-                        for t in ("songs" in res and "results" in res["songs"] and res["songs"]["results"]) or []
-                    ]
-                    logger.info("YTMusic found %d songs for artist \"%s\" in library", len(res["songs"]), res["name"])
-                except Exception:
-                    logger.exception("YTMusic failed getting tracks for artist \"%s\"", res["name"])
+            # if upload:
+            #     try:
+            #         res = API.get_library_upload_artist(id_)
+            #         uploadArtistToTracks(res)
+            #         return [
+            #             Ref.track(uri=f"ytm:album?id={t['videoId']}", name=t["title"])
+            #             for t in res
+            #         ]
+            #         logger.info("YTMusic found %d songs for uploaded artist \"%s\"", len(res), res[0]["artist"]["name"])
+            #     except Exception:
+            #         logger.exception("YTMusic failed getting tracks for uploaded artist \"%s\"", id_)
+            # else:
+            try:
+                res = API.get_artist(id_)
+                artistToTracks(res)
+                return [
+                    Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
+                    for t in ("songs" in res and "results" in res["songs"] and res["songs"]["results"]) or []
+                ]
+                logger.info("YTMusic found %d songs for artist \"%s\" in library", len(res["songs"]), res["name"])
+            except Exception:
+                logger.exception("YTMusic failed getting tracks for artist \"%s\"", id_)
         elif uri.startswith("ytm:album?"):
             id_, upload = parse_uri(uri)
-            if upload:
-                try:
-                    res = API.get_library_upload_album(id_)
-                    uploadAlbumToTracks(res, id_)
-                    return [
-                        Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
-                        for t in ("tracks" in res and res["tracks"]) or []
-                    ]
-                    logger.info("YTMusic found %d songs for uploaded album \"%s\"", len(res["tracks"]), res["title"])
-                except Exception:
-                    logger.exception("YTMusic failed getting tracks for uploaded album \"%s\"", res["title"])
-            else:
-                try:
-                    res = API.get_album(id_)
-                    albumToTracks(res, id_)
-                    return [
-                        Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
-                        for t in ("tracks" in res and res["tracks"]) or []
-                    ]
-                    logger.info("YTMusic found %d songs for album \"%s\" in library", len(res["tracks"]), res["title"])
-                except Exception:
-                    logger.exception("YTMusic failed getting tracks for album \"%s\"", res["title"])
+            # if upload:
+            #     try:
+            #         res = API.get_library_upload_album(id_)
+            #         uploadAlbumToTracks(res, id_)
+            #         return [
+            #             Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
+            #             for t in ("tracks" in res and res["tracks"]) or []
+            #         ]
+            #         logger.info("YTMusic found %d songs for uploaded album \"%s\"", len(res["tracks"]), res["title"])
+            #     except Exception:
+            #         logger.exception("YTMusic failed getting tracks for uploaded album \"%s\"", id_)
+            # else:
+            try:
+                res = API.get_album(id_)
+                albumToTracks(res, id_)
+                return [
+                    Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
+                    for t in ("tracks" in res and res["tracks"]) or []
+                ]
+                logger.info("YTMusic found %d songs for album \"%s\" in library", len(res["tracks"]), res["title"])
+            except Exception:
+                logger.exception("YTMusic failed getting tracks for album \"%s\"", id_)
         return []
 
     def lookup(self, uri):
@@ -524,20 +527,20 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
     def get_distinct(self, field, query=None):
         ret = set()
         if field == "artist" or field == "albumartist":
-            try:
-                uploads = API.get_library_upload_artists(limit=100)
-            except Exception:
-                logger.exception("YTMusic failed getting uploaded artists")
-                uploads = []
-                pass
+            # try:
+            #     uploads = API.get_library_upload_artists(limit=100)
+            # except Exception:
+            #     logger.exception("YTMusic failed getting uploaded artists")
+            #     uploads = []
+            #     pass
             try:
                 library = API.get_library_artists(limit=100)
             except Exception:
                 logger.exception("YTMusic failed getting artists from library")
                 library = []
                 pass
-            for a in uploads:
-                ret.add(a["artist"])
+            # for a in uploads:
+            #     ret.add(a["artist"])
             for a in library:
                 ret.add(a["artist"])
         # elif field == "album":
@@ -792,7 +795,8 @@ class YouTubePlaylistsProvider(backend.PlaylistsProvider):
         if len(remove):
             logger.debug("YTMusic removing items \"%s\" from playlist", remove)
             try:
-                API.remove_playlist_items(id_, list(remove))
+                videos = [t for t in pls["tracks"] if t["videoId"] in remove]
+                API.remove_playlist_items(id_, videos)
             except Exception:
                 logger.exception("YTMusic failed removing items from playlist")
         if len(add):
