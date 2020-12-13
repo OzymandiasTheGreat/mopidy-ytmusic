@@ -416,6 +416,7 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 Ref.directory(uri="ytm:artist", name="Artists"),
                 Ref.directory(uri="ytm:album", name="Albums"),
                 Ref.directory(uri="ytm:liked", name="Liked Songs"),
+                Ref.directory(uri="ytm:history", name="Recently Played"),
             ]
         elif uri == "ytm:artist":
             try:
@@ -468,6 +469,17 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 logger.info("YTMusic found %d liked songs", len(res["tracks"]))
             except Exception:
                 logger.exception("YTMusic failed getting liked songs")
+        elif uri == "ytm:history":
+            try:
+                res = API.get_history()
+                logger.info("YTMusic found %d history songs", len(res))
+                playlistToTracks({'tracks': res})
+                return [
+                    Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
+                    for t in res
+                ]
+            except Exception:
+                logger.exception("YTMusic failed getting history songs")
         elif uri.startswith("ytm:artist?"):
             id_, upload = parse_uri(uri)
             # if upload:
