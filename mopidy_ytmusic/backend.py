@@ -501,7 +501,7 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                     playlistToTracks({'tracks': res})
                     return [
                         Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
-                        for t in res
+                        for t in res if t['videoId'] != track_id
                     ]
             except Exception:
                 logger.exception("YTMusic failed getting watch songs")
