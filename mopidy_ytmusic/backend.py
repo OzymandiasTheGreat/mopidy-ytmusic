@@ -587,15 +587,18 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 playback = self.backend.playback
                 if playback.last_id is not None:
                     track_id = playback.last_id
-                    res = API.get_watch_playlist(track_id, limit=100)
-                    if 'tracks' in res:
-                        logger.info("YTMusic found %d watch songs for \"%s\"", len(res["tracks"]), track_id)
-                        res['tracks'].pop(0)
-                        playlistToTracks(res)
-                        return [
-                            Ref.track(uri=f"ytmusic:video:{t['videoId']}", name=t["title"])
-                            for t in res["tracks"]
-                        ]
+                else:
+                    hist = API.get_history()
+                    track_id = hist[0]['videoId']
+                res = API.get_watch_playlist(track_id, limit=100)
+                if 'tracks' in res:
+                    logger.info("YTMusic found %d watch songs for \"%s\"", len(res["tracks"]), track_id)
+                    res['tracks'].pop(0)
+                    playlistToTracks(res)
+                    return [
+                        Ref.track(uri=f"ytmusic:video:{t['videoId']}", name=t["title"])
+                        for t in res["tracks"]
+                    ]
             except Exception:
                 logger.exception("YTMusic failed getting watch songs")
         elif uri == "ytmusic:auto":
