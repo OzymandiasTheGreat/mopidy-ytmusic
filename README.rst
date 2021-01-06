@@ -34,10 +34,12 @@ in the terminal.
 Build for Local Install
 =======================
 
-1. Install poetry <https://python-poetry.org/docs/#installation>
-2. Run `poetry build` to create the build tarball
+1. Install `poetry <https://python-poetry.org/docs/#installation>`
+2. To create the build tarball, run::
+    poetry build
 3. The `dist/Mopidy-YTMusic-x.x.x.tar.gz` file is what you'll use to install.
-4. With pip: `python3 -m pip install dist/Mopidy-YTMusic-x.x.x.tar.gz` to install or reinstall over an existing version.
+4. To install or reinstall an over an existing version with pip, run something similar::
+    python3 -m pip install dist/Mopidy-YTMusic-x.x.x.tar.gz
 5. Do configuration stuff if you haven't already.  
 
 Project resources
