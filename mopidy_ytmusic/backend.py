@@ -245,7 +245,7 @@ def artistToTracks(artist):
             last_modified=None,
         )
         ret.append(TRACKS[track["videoId"]])
-    return(ret);
+    return(ret)
 
 
 def uploadAlbumToTracks(album, id_):
@@ -516,6 +516,7 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 Ref.directory(uri="ytmusic:artist", name="Artists"),
                 Ref.directory(uri="ytmusic:album", name="Albums"),
                 Ref.directory(uri="ytmusic:liked", name="Liked Songs"),
+                Ref.directory(uri="ytmusic:history", name="Recently Played"),
                 Ref.directory(uri="ytmusic:watch", name="Similar to last played"),
             ]
         elif uri == "ytmusic:artist":
@@ -569,6 +570,17 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 ]
             except Exception:
                 logger.exception("YTMusic failed getting liked songs")
+        elif uri == "ytmusic:history":
+            try:
+                res = API.get_history()
+                playlistToTracks({'tracks': res})
+                logger.info("YTMusic found %d songs from recent history",len(res))
+                return [
+                    Ref.track(uri=f"ytmusic:track:{t['videoId']}", name=t['title'])
+                    for t in res
+                ]
+            except Exception:
+                logger.exception("YTMusic failed getting listening history")
         elif uri == "ytmusic:watch":
             try:
                 playback = self.backend.playback
