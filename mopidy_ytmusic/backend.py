@@ -3,15 +3,19 @@ import pykka
 from mopidy import backend, httpclient
 from mopidy.models import Ref, Track, Artist, Album, SearchResult, Playlist
 from mopidy_ytmusic import logger
+from ytmusicapi.parsers.utils import nav, get_continuations, CAROUSEL_TITLE, TITLE, TITLE_TEXT, NAVIGATION_BROWSE_ID, SINGLE_COLUMN_TAB, SECTION_LIST
 import requests
 import json
 import re
 import random
+import time
+import hashlib
 
 
 YDL = None
 API = None
 TRACKS = {}
+YTBROWSE = { 'expire': 0, 'sections': [] }
 
 # music.youtube.com only seems to use the 5dd3f3b2 player.  So we'll just keep the
 # translation matrices for that to figure out the url ourselves, instead of waiting
@@ -461,6 +465,44 @@ def parseSearch(results, field=None, queries=[]):
         albums=albums,
     )
 
+def parse_auto_playlists(res):
+    browse = []
+    for sect in res:
+        car = nav(sect, ['musicCarouselShelfRenderer'])
+        stitle = nav(car, CAROUSEL_TITLE + ['text'])
+        browse.append({'name':stitle,'uri':'ytmusic:auto:'+hashlib.md5(stitle.encode('utf-8')).hexdigest(),'items':[]})
+        for item in nav(car,['contents']):
+            brId = nav(item,['musicTwoRowItemRenderer'] + TITLE + NAVIGATION_BROWSE_ID, True)
+            if brId is None or brId == 'VLLM':
+                continue
+            elif brId.startswith('VL') or brId.startswith('PL'):
+                ititle = nav(item,['musicTwoRowItemRenderer'] + TITLE_TEXT)
+                browse[-1]['items'].append({'uri':f"ytmusic:playlist:{brId}",'name':ititle})
+    return(browse)
+
+def get_auto_playlists():
+    global YTBROWSE
+    if (time.time() < YTBROWSE['expire']):
+        return(0)
+    try:
+        logger.info('YTMusic loading auto playlists')
+        response = API._send_request('browse',{})
+        exp = response['maxAgeStoreSeconds']+time.time()
+        tab = nav(response, SINGLE_COLUMN_TAB)
+        browse = parse_auto_playlists(nav(tab, SECTION_LIST))
+        if 'continuations' in tab['sectionListRenderer']:
+            request_func = lambda additionalParams: API._send_request('browse',{},additionalParams)
+            parse_func = lambda contents: parse_auto_playlists(contents)
+            browse.extend(get_continuations(tab['sectionListRenderer'],'sectionListContinuation',100,request_func,parse_func))
+        # Delete empty sections
+        for i in range(len(browse)-1,0,-1):
+            if len(browse[i]['items']) == 0:
+                browse.pop(i)
+        logger.info('YTMusic loaded %d auto playlists sections',len(browse))
+        YTBROWSE = { 'expire':exp, 'sections': browse }
+    except Exception:
+        logger.exception('YTMusic failed to load auto playlists')
+    return(0)
 
 class YTMusicBackend(pykka.ThreadingActor, backend.Backend):
     def __init__(self, config, audio):
@@ -480,6 +522,8 @@ class YTMusicBackend(pykka.ThreadingActor, backend.Backend):
         })
         global API
         API = YTMusic(config["ytmusic"]["auth_json"])
+
+        get_auto_playlists()
 
         self.playback = YouTubePlaybackProvider(audio=audio, backend=self)
         self.library = YouTubeLibraryProvider(backend=self)
@@ -603,17 +647,23 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 logger.exception("YTMusic failed getting watch songs")
         elif uri == "ytmusic:auto":
             try:
-                res = API._send_request('browse',{})
-                pls = []
-                for i in res['contents']['singleColumnBrowseResultsRenderer']['tabs'][0]['tabRenderer']['content']['sectionListRenderer']['contents']:
-                    for j in i['musicCarouselShelfRenderer']['contents']:
-                        if 'navigationEndpoint' in j['musicTwoRowItemRenderer']['title']['runs'][0] and 'browseEndpoint' in j['musicTwoRowItemRenderer']['title']['runs'][0]['navigationEndpoint']:
-                            plid = j['musicTwoRowItemRenderer']['title']['runs'][0]['navigationEndpoint']['browseEndpoint']['browseId']
-                            if plid.startswith('VL') and plid != 'VLLM':
-                                pls.append(Ref.playlist(uri=f"ytmusic:playlist:{plid}",name=j['musicTwoRowItemRenderer']['title']['runs'][0]['text']))
-                return(pls)
+                get_auto_playlists()
+                return [
+                    Ref.directory(uri=a['uri'], name=a['name'])
+                    for a in YTBROWSE['sections']
+                ]
             except Exception:
                 logger.exception('YTMusic failed getting auto playlists')
+        elif uri.startswith("ytmusic:auto:"):
+            try:
+                for a in YTBROWSE['sections']:
+                    if a['uri'] == uri:
+                        return [
+                            Ref.playlist(uri=i['uri'],name=i['name'])
+                            for i in a['items']
+                        ]
+            except Exception:
+                logger.exception('YTMusic failed getting auto playlist "%s"',uri)
         elif uri.startswith("ytmusic:artist:"):
             id_, upload = parse_uri(uri)
             # if upload:
