@@ -518,6 +518,7 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 Ref.directory(uri="ytmusic:liked", name="Liked Songs"),
                 Ref.directory(uri="ytmusic:history", name="Recently Played"),
                 Ref.directory(uri="ytmusic:watch", name="Similar to last played"),
+                Ref.directory(uri="ytmusic:auto", name="Auto Playlists"),
             ]
         elif uri == "ytmusic:artist":
             try:
@@ -597,6 +598,19 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                         ]
             except Exception:
                 logger.exception("YTMusic failed getting watch songs")
+        elif uri == "ytmusic:auto":
+            try:
+                res = API._send_request('browse',{})
+                pls = []
+                for i in res['contents']['singleColumnBrowseResultsRenderer']['tabs'][0]['tabRenderer']['content']['sectionListRenderer']['contents']:
+                    for j in i['musicCarouselShelfRenderer']['contents']:
+                        if 'navigationEndpoint' in j['musicTwoRowItemRenderer']['title']['runs'][0] and 'browseEndpoint' in j['musicTwoRowItemRenderer']['title']['runs'][0]['navigationEndpoint']:
+                            plid = j['musicTwoRowItemRenderer']['title']['runs'][0]['navigationEndpoint']['browseEndpoint']['browseId']
+                            if plid.startswith('VL') and plid != 'VLLM':
+                                pls.append(Ref.playlist(uri=f"ytmusic:playlist:{plid}",name=j['musicTwoRowItemRenderer']['title']['runs'][0]['text']))
+                return(pls)
+            except Exception:
+                logger.exception('YTMusic failed getting auto playlists')
         elif uri.startswith("ytmusic:artist:"):
             id_, upload = parse_uri(uri)
             # if upload:
@@ -639,6 +653,17 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 return(tracks)
             except Exception:
                 logger.exception("YTMusic failed getting tracks for album \"%s\"", id_)
+        elif uri.startswith("ytmusic:playlist:"):
+            id_, upload = parse_uri(uri)
+            try:
+                res = API.get_playlist(id_)
+                playlistToTracks(res)
+                return [
+                    Ref.track(uri=f"ytmusic:video:{t['videoId']}", name=t["title"])
+                    for t in res["tracks"]
+                ]
+            except Exception:
+                logger.exception("YTMusic failed to get tracks from playlist '%s'",id_)
         return []
 
     def lookup(self, uri):
