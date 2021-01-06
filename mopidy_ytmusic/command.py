@@ -20,7 +20,7 @@ class SetupCommand(commands.Command):
         if not filepath:
             filepath = os.getcwd()
         path = Path(filepath+'/auth.json')
-        print('Using "'+str(path)+'"');
+        print('Using "'+str(path)+'"')
         if (path.exists()):
             print("File already exists!")
             return 1
