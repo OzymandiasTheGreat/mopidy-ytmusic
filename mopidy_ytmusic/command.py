@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from mopidy import commands
 from mopidy_ytmusic import logger
 
@@ -15,8 +16,11 @@ class SetupCommand(commands.Command):
     def run(self, args, config):
         from ytmusicapi.ytmusic import YTMusic
 
-        filepath = input("Enter the path where you want to save auth.json:")
-        path = Path(filepath)
+        filepath = input("Enter the path where you want to save auth.json [default=current dir]: ")
+        if not filepath:
+            filepath = os.getcwd()
+        path = Path(filepath+'/auth.json')
+        print('Using "'+str(path)+'"');
         if (path.exists()):
             print("File already exists!")
             return 1
@@ -28,5 +32,10 @@ class SetupCommand(commands.Command):
         except Exception:
             logger.exception("YTMusic setup failed")
             return 1
-        print("auth.json saved to {}".format(str(path)))
+        print("Authentication JSON data saved to {}".format(str(path)))
+        print('')
+        print('Update your mopidy.conf to reflect the new auth file:')
+        print('   [ytmusic]')
+        print('   enabled=true')
+        print('   auth_json='+str(path))
         return 0
