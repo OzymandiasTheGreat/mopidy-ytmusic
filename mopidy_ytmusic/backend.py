@@ -41,7 +41,9 @@ def get_video_fallback(id_):
         if fmt["ext"] == "m4a":
             logger.debug("YTMusic Stream URI %s", fmt["url"])
             return fmt["url"]
-    return None
+    # Oh boy, one last try:
+    logger.debug("YTMusic Stream URI %s", vid['formats'][0]["url"])
+    return vid['formats'][0]['url']
 
 def get_video(id_):
 # ytmusicapi just doesn't give us the detail we need.  So we have to re-implement their
@@ -55,19 +57,34 @@ def get_video(id_):
     streams = player_response['streamingData']
     url = None
     # Try to find the highest quality stream.  We want "AUDIO_QUALITY_HIGH", barring
-    # that find the highest bitrate audio/mp4 stream.
+    # that we find the highest bitrate audio/mp4 stream, after that we sort through the
+    # garbage.
     if 'adaptiveFormats' in streams:
         playstr = None
+        bitrate = 0
+        crap = {}
+        worse = {}
         for stream in streams['adaptiveFormats']:
             if 'audioQuality' in stream and stream['audioQuality'] == 'AUDIO_QUALITY_HIGH':
                 playstr = stream
                 break
-        if playstr is None:  # Bummer, try for audio/mp4 of lesser quality
-            bitrate = 0
-            for stream in streams['adaptiveFormats']:
-                if stream['mimeType'].startswith('audio/mp4') and stream['averageBitrate'] > bitrate:
-                    bitrate = stream['averageBitrate']
-                    playstr = stream
+            if stream['mimeType'].startswith('audio/mp4') and stream['averageBitrate'] > bitrate:
+                bitrate = stream['averageBitrate']
+                playstr = stream
+            elif stream['mimeType'].startswith('audio'):
+                crap[stream['averageBitrate']] = stream
+            else:
+                worse[stream['averageBitrate']] = stream
+        if playstr is None:
+            # sigh.
+            if len(crap):
+                playstr=crap[sorted(list(crap.keys()))[-1]]
+                if 'audioQuality' not in playstr:
+                    playstr['audioQuality'] = 'AUDIO_QUALITY_GARBAGE'
+            elif len(worse):
+                playstr=worse[sorted(list(worse.keys()))[-1]]
+                if 'audioQuality' not in playstr:
+                    playstr['audioQuality'] = 'AUDIO_QUALITY_FECES'
         if playstr is not None:
             if 'signatureCipher' in playstr:
                 logger.info('Found %s stream with %d ABR for %s',playstr['audioQuality'],playstr['averageBitrate'],id_)
@@ -87,8 +104,23 @@ def get_video(id_):
                 logger.error('No url for %s. Falling back to youtube-dl.',id_)
         else:
             logger.error('No mp4 audio streams found for %s. Falling back to youtube-dl.',id_)
+    elif 'formats' in streams:
+        # Great, we're really left with the dregs of quality.
+        # We can't know its playertype, so if there's no url, we cannot
+        # decode the signatureCipher and must fallback to youtube-dl
+        # to do the heavy lifting of decoding it.
+        playstr = streams['formats'][0]
+        if 'audioQuality' not in playstr:
+            playstr['audioQuality'] = 'AUDIO_QUALITY_404'
+        if 'url' in playstr:
+            logger.info('Found %s stream with %d ABR for %s',playstr['audioQuality'],playstr['averageBitrate'],id_)
+            url = playstr['url']
+        else:
+            logger.error('No url for %s. Falling back to youtube-dl.',id_)
     else:
         logger.error('No streams found for %s. Falling back to youtube-dl.',id_)
+    if url is None:
+        url = get_video_fallback(id_)
     if url is not None:
         # Let YTMusic know we're playing this track so it will be added to our history.
         trackurl = re.sub(r'plid=','list=',player_response['playbackTracking']['videostatsPlaybackUrl']['baseUrl'])
@@ -110,7 +142,7 @@ def get_video(id_):
         logger.debug("%d code from '%s'",tr.status_code,tr.url)
         # Return the decoded youtube url to mopidy for playback.
         return(url)
-    return get_video_fallback(id_)
+    return None
 
 def parse_uri(uri):
     components = uri.split(':')
