@@ -21,7 +21,7 @@ class Extension(ext.Extension):
 
     def get_config_schema(self):
         schema = super().get_config_schema()
-        schema["auth_json"] = config.String()
+        schema["auth_json"] = config.String(optional=True)
         return schema
 
     def get_command(self):
