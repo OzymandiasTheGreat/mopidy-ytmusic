@@ -292,6 +292,7 @@ def artistToTracks(artist):
 
 
 def uploadAlbumToTracks(album, bId):
+    ret = []
     artists = [Artist(
         uri=f"ytmusic:artist:{album['artist']['id']}:upload",
         name=album["artist"]["name"],
@@ -326,6 +327,8 @@ def uploadAlbumToTracks(album, bId):
                 musicbrainz_id="",
                 last_modified=None,
             )
+            ret.append(TRACKS[track["videoId"]])
+    return(ret)
 
 
 def albumToTracks(album, bId):
@@ -617,20 +620,19 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
     def browse(self, uri):
         logger.info("YTMusic browsing uri \"%s\"", uri)
         if uri == "ytmusic:root":
+            dirs = []
             if AUTH:
-                return [
+                dirs += [
                     Ref.directory(uri="ytmusic:artist", name="Artists"),
                     Ref.directory(uri="ytmusic:album", name="Albums"),
                     Ref.directory(uri="ytmusic:liked", name="Liked Songs"),
                     Ref.directory(uri="ytmusic:history", name="Recently Played"),
-                    Ref.directory(uri="ytmusic:watch", name="Similar to last played"),
-                    Ref.directory(uri="ytmusic:auto", name="Auto Playlists"),
                 ]
-            else:
-                return [
-                    Ref.directory(uri="ytmusic:watch", name="Similar to last played"),
-                    Ref.directory(uri="ytmusic:auto", name="Auto Playlists"),
-                ]
+            dirs = [
+                Ref.directory(uri="ytmusic:watch", name="Similar to last played"),
+                Ref.directory(uri="ytmusic:auto", name="Auto Playlists"),
+            ]
+            return(dirs)
         elif uri == "ytmusic:artist":
             try:
                 library_artists = [
@@ -680,23 +682,17 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
         elif uri == "ytmusic:liked":
             try:
                 res = API.get_liked_songs(limit=100)
-                playlistToTracks(res)
+                tracks = playlistToTracks(res)
                 logger.info("YTMusic found %d liked songs", len(res["tracks"]))
-                return [
-                    Ref.track(uri=f"ytmusic:track:{t['videoId']}", name=t["title"])
-                    for t in ("tracks" in res and res["tracks"]) or []
-                ]
+                return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
                 logger.exception("YTMusic failed getting liked songs")
         elif uri == "ytmusic:history":
             try:
                 res = API.get_history()
-                playlistToTracks({'tracks': res})
+                tracks = playlistToTracks({'tracks': res})
                 logger.info("YTMusic found %d songs from recent history",len(res))
-                return [
-                    Ref.track(uri=f"ytmusic:track:{t['videoId']}", name=t['title'])
-                    for t in res
-                ]
+                return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
                 logger.exception("YTMusic failed getting listening history")
         elif uri == "ytmusic:watch":
@@ -707,15 +703,13 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 elif AUTH:
                     hist = API.get_history()
                     track_id = hist[0]['videoId']
-                res = API.get_watch_playlist(track_id, limit=100)
-                if 'tracks' in res:
-                    logger.info("YTMusic found %d watch songs for \"%s\"", len(res["tracks"]), track_id)
-                    res['tracks'].pop(0)
-                    playlistToTracks(res)
-                    return [
-                        Ref.track(uri=f"ytmusic:video:{t['videoId']}", name=t["title"])
-                        for t in res["tracks"]
-                    ]
+                if track_id:
+                    res = API.get_watch_playlist(track_id, limit=100)
+                    if 'tracks' in res:
+                        logger.info("YTMusic found %d watch songs for \"%s\"", len(res["tracks"]), track_id)
+                        res['tracks'].pop(0)
+                        tracks = playlistToTracks(res)
+                        return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
                 logger.exception("YTMusic failed getting watch songs")
         elif uri == "ytmusic:auto":
@@ -750,12 +744,9 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
             if upload:
                 try:
                     res = API.get_library_upload_artist(bId)
-                    uploadArtistToTracks(res)
+                    tracks = uploadArtistToTracks(res)
                     logger.info("YTMusic found %d songs for uploaded artist \"%s\"", len(res), res[0]["artist"]["name"])
-                    return [
-                        Ref.track(uri=f"ytmusic:album:{t['videoId']}", name=t["title"])
-                        for t in res
-                    ]
+                    return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
                 except Exception:
                     logger.exception("YTMusic failed getting tracks for uploaded artist \"%s\"", bId)
             else:
@@ -763,10 +754,7 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                     res = API.get_artist(bId)
                     tracks = artistToTracks(res)
                     logger.info("YTMusic found %d songs for artist \"%s\" in library", len(res["songs"]), res["name"])
-                    return [
-                        Ref.track(uri=t.uri, name=t.name)
-                        for t in tracks
-                    ]
+                    return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
                 except Exception:
                     logger.exception("YTMusic failed getting tracks for artist \"%s\"", bId)
         elif uri.startswith("ytmusic:album:"):
@@ -774,12 +762,9 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
             if upload:
                 try:
                     res = API.get_library_upload_album(bId)
-                    uploadAlbumToTracks(res, bId)
+                    tracks = uploadAlbumToTracks(res, bId)
                     logger.info("YTMusic found %d songs for uploaded album \"%s\"", len(res["tracks"]), res["title"])
-                    return [
-                        Ref.track(uri=f"ytmusic:track:{t['videoId']}", name=t["title"])
-                        for t in ("tracks" in res and res["tracks"]) or []
-                    ]
+                    return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
                 except Exception:
                     logger.exception("YTMusic failed getting tracks for uploaded album \"%s\"", bId)
             else:
@@ -787,21 +772,15 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                     res = API.get_album(bId)
                     tracks = albumToTracks(res, bId)
                     logger.info("YTMusic found %d songs for album \"%s\" in library", len(res["tracks"]), res["title"])
-                    return [
-                        Ref.track(uri=t.uri, name=t.name)
-                        for t in tracks
-                    ]
+                    return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
                 except Exception:
                     logger.exception("YTMusic failed getting tracks for album \"%s\"", bId)
         elif uri.startswith("ytmusic:playlist:"):
             bId, upload = parse_uri(uri)
             try:
                 res = API.get_playlist(bId)
-                playlistToTracks(res)
-                return [
-                    Ref.track(uri=f"ytmusic:video:{t['videoId']}", name=t["title"])
-                    for t in res["tracks"]
-                ]
+                tracks = playlistToTracks(res)
+                return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
                 logger.exception("YTMusic failed to get tracks from playlist '%s'",bId)
         return []
