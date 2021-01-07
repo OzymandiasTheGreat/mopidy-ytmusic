@@ -30,7 +30,7 @@ ALBUMS = {'PLAYLISTS':Album(uri="ytmusic:album:PLAYLISTS",name="Playlists",artis
 YTBROWSE = { 'expire': 0, 'sections': [] }
 
 
-def get_audio(bId):
+def get_track(bId):
 # ytmusicapi just doesn't give us the detail we need.  So we have to re-implement their
 # code to get access to the tracking URLs as well as the streaming data.
 #   streams = API.get_streaming_data(bId)
@@ -644,7 +644,7 @@ class YouTubePlaybackProvider(backend.PlaybackProvider):
         try:
             bId, _ = parse_uri(uri)
             self.last_id = bId
-            return get_audio(bId)
+            return get_track(bId)
         except Exception as e:
             logger.error('translate_uri error "%s"', str(e))
             return None
