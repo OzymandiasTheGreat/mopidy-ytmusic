@@ -548,10 +548,8 @@ def parse_auto_playlists(res):
 
 def get_auto_playlists():
     global YTBROWSE
-    if (time.time() < YTBROWSE['expire']):
-        return(0)
     try:
-        logger.info('YTMusic loading auto playlists')
+        logger.debug('YTMusic loading auto playlists')
         response = API._send_request('browse',{})
         exp = response['maxAgeStoreSeconds']+time.time()
         tab = nav(response, SINGLE_COLUMN_TAB)
