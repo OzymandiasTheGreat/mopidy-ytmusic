@@ -33,7 +33,7 @@ has limited options.  If you would like to connect to YouTube Music with your
 account (free or premium) you'll need to generate an auth.json file and configure
 Mopidy-YTMusic to use it.
 
-To create an auth.json file run `mopidy ytmusic setup` and follow instructions
+To create an auth.json file run :code:`mopidy ytmusic setup` and follow instructions
 in the terminal. When you're done it will tell you what config options you need
 to add to your Mopidy configuration file.
 
