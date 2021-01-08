@@ -12,12 +12,21 @@ Mopidy extension for playing music from YouTube Music
 Installation
 ============
 
+.. raw:: html
+
+    <strike>
+
 Install by running::
 
     python3 -m pip install Mopidy-YTMusic
 
 See https://mopidy.com/ext/ytmusic/ for alternative installation methods.
 
+.. raw:: html
+
+    </strike>
+
+Not to use the code from this fork.  See "Build for Local Install" below instead.
 
 Configuration
 =============
