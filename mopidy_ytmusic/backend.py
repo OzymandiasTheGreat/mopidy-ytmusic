@@ -36,8 +36,6 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
         if config["ytmusic"]["auth_json"]:
             self._ytmusicapi_auth_json = config["ytmusic"]["auth_json"]
             self.auth = True
-            global AUTH
-            AUTH = True
 
         self.playback = YoutubeMusicPlaybackProvider(audio=audio, backend=self)
         self.library = YoutubeMusicLibraryProvider(backend=self)
