@@ -22,6 +22,9 @@ class Extension(ext.Extension):
     def get_config_schema(self):
         schema = super().get_config_schema()
         schema["auth_json"] = config.String(optional=True)
+        schema["auto_playlist_refresh"] = config.Integer(minimum=1, optional=True)
+        schema["youtube_player_refresh"] = config.Integer(minimum=1, optional=True)
+        schema["playlist_item_limit"] = config.Integer(minimum=1, optional=True)
         return schema
 
     def get_command(self):

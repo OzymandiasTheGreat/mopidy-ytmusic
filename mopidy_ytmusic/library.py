@@ -75,7 +75,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
             return library_albums  + upload_albums
         elif uri == "ytmusic:liked":
             try:
-                res = self.backend.api.get_liked_songs(limit=100)
+                res = self.backend.api.get_liked_songs(limit=self.backend.playlist_item_limit)
                 tracks = self.playlistToTracks(res)
                 logger.info("YTMusic found %d liked songs", len(res["tracks"]))
                 return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
@@ -83,7 +83,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 logger.exception("YTMusic failed getting liked songs")
         elif uri == "ytmusic:history":
             try:
-                res = self.backend.api.get_history()
+                res = self.backend.api.get_history(limit=self.backend.playlist_item_limit)
                 tracks = self.playlistToTracks({'tracks': res})
                 logger.info("YTMusic found %d songs from recent history",len(res))
                 return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
@@ -98,7 +98,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                     hist = self.backend.api.get_history()
                     track_id = hist[0]['videoId']
                 if track_id:
-                    res = self.backend.api.get_watch_playlist(track_id, limit=100)
+                    res = self.backend.api.get_watch_playlist(track_id, limit=self.backend.playlist_item_limit)
                     if 'tracks' in res:
                         logger.info("YTMusic found %d watch songs for \"%s\"", len(res["tracks"]), track_id)
                         res['tracks'].pop(0)
@@ -171,7 +171,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
         elif uri.startswith("ytmusic:playlist:"):
             bId, upload = parse_uri(uri)
             try:
-                res = self.backend.api.get_playlist(bId)
+                res = self.backend.api.get_playlist(bId,limit=self.backend.playlist_item_limit)
                 tracks = self.playlistToTracks(res)
                 return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
@@ -196,7 +196,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 logger.exception("YTMusic failed getting tracks for artist \"%s\"", bId)
         elif (uri.startswith("ytmusic:playlist:")):
             try:
-                res = self.backend.api.get_playlist(bId)
+                res = self.backend.api.get_playlist(bId,limit=self.backend.playlist_item_limit)
                 tracks = self.playlistToTracks(res)
                 return(tracks)
             except Exception:
@@ -215,7 +215,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
             #     uploads = []
             #     pass
             try:
-                library = self.backend.api.get_library_artists(limit=100)
+                library = self.backend.api.get_library_artists(limit=self.backend.playlist_item_limit)
             except Exception:
                 logger.exception("YTMusic failed getting artists from library")
                 library = []
@@ -226,13 +226,13 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 ret.add(a["artist"])
         # elif field == "album":
         #     try:
-        #         uploads = self.backend.api.get_library_upload_albums(limit=100)
+        #         uploads = self.backend.api.get_library_upload_albums(limit=self.backend.playlist_item_limit)
         #     except Exception:
         #         logger.exception("YTMusic failed getting uploaded albums")
         #         uploads = []
         #         pass
         #     try:
-        #         library = self.backend.api.get_library_albums(limit=100)
+        #         library = self.backend.api.get_library_albums(limit=self.backend.playlist_item_limit)
         #     except Exception:
         #         logger.exception("YTMusic failed getting albums from library")
         #         library = []
@@ -394,7 +394,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
     
     def artistToTracks(self,artist):
         if "songs" in artist and "browseId" in artist["songs"] and artist["songs"]["browseId"] is not None:
-            res = self.backend.api.get_playlist(artist["songs"]["browseId"])
+            res = self.backend.api.get_playlist(artist["songs"]["browseId"],limit=self.backend.playlist_item_limit)
             tracks = self.playlistToTracks(res)
             logger.info('YTMusic found %d tracks for %s',len(tracks),artist['name'])
             return tracks

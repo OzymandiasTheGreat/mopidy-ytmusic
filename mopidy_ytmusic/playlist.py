@@ -21,7 +21,7 @@ class YoutubeMusicPlaylistsProvider(backend.PlaylistsProvider):
         bId = parse_uri(uri)
         logger.info("YTMusic looking up playlist \"%s\"", bId)
         try:
-            pls = self.backend.api.get_playlist(bId, limit=100)
+            pls = self.backend.api.get_playlist(bId, limit=self.backend.playlist_item_limit)
         except Exception:
             logger.exception("YTMusic playlist lookup failed")
             pls = None
@@ -38,7 +38,7 @@ class YoutubeMusicPlaylistsProvider(backend.PlaylistsProvider):
         bId = parse_uri(uri)
         logger.info("YTMusic getting playlist items for \"%s\"", bId)
         try:
-            pls = self.backend.api.get_playlist(bId, limit=100)
+            pls = self.backend.api.get_playlist(bId, limit=self.backend.playlist_item_limit)
         except Exception:
             logger.exception("YTMusic failed getting playlist items")
             pls = None
@@ -82,7 +82,7 @@ class YoutubeMusicPlaylistsProvider(backend.PlaylistsProvider):
         bId = parse_uri(playlist.uri)
         logger.info("YTMusic saving playlist \"%s\" \"%s\"", playlist.name, bId)
         try:
-            pls = self.backend.api.get_playlist(bId, limit=100)
+            pls = self.backend.api.get_playlist(bId, limit=self.backend.playlist_item_limit)
         except Exception:
             logger.exception("YTMusic saving playlist failed")
             return None
