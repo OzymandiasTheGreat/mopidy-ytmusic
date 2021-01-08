@@ -31,4 +31,7 @@ class Extension(ext.Extension):
 
     def setup(self, registry):
         from .backend import YTMusicBackend
+        from .scrobble_fe import YTMusicScrobbleFE
+
         registry.add("backend", YTMusicBackend)
+        registry.add("frontend", YTMusicScrobbleFE)

@@ -1,9 +1,4 @@
-from urllib.parse import urlparse, parse_qs
 import pykka
-from mopidy import backend, httpclient
-from mopidy.models import Ref, Track, Artist, Album, SearchResult, Playlist
-from mopidy_ytmusic import logger
-from ytmusicapi.parsers.utils import nav, get_continuations, CAROUSEL_TITLE, TITLE, TITLE_TEXT, NAVIGATION_BROWSE_ID, SINGLE_COLUMN_TAB, SECTION_LIST
 import requests
 import json
 import re
@@ -11,6 +6,16 @@ import random
 import time
 import hashlib
 
+from urllib.parse import urlparse, parse_qs
+from mopidy import backend, httpclient
+from mopidy.models import Ref, Track, Artist, Album, SearchResult, Playlist
+from mopidy_ytmusic import logger
+from youtube_dl import YoutubeDL
+from ytmusicapi.ytmusic import YTMusic
+from ytmusicapi.parsers.utils import nav, get_continuations, CAROUSEL_TITLE, TITLE, TITLE_TEXT, NAVIGATION_BROWSE_ID, SINGLE_COLUMN_TAB, SECTION_LIST
+
+from .repeating_timer import RepeatingTimer
+from .scrobble_fe import YTMusicScrobbleListener
 
 # Youtube-DL instance
 YDL = None
@@ -33,21 +38,13 @@ YTBROWSE = { 'expire': 0, 'sections': [] }
 
 
 def get_track(bId):
-# ytmusicapi just doesn't give us the detail we need.  So we have to re-implement their
-# code to get access to the tracking URLs as well as the streaming data.
-#   streams = API.get_streaming_data(bId)
-    endpoint = "https://www.youtube.com/get_video_info"
-    params = {"video_id": bId, "hl": API.language, "el": "detailpage", "c": "WEB_REMIX", "cver": "0.1"}
-    response = requests.get(endpoint,params,headers=API.headers,proxies=API.proxies)
-    text = parse_qs(response.text)
-    player_response = json.loads(text['player_response'][0])
-    streams = player_response['streamingData']
-    url = None
+    streams = API.get_streaming_data(bId)
     # Try to find the highest quality stream.  We want "AUDIO_QUALITY_HIGH", barring
     # that we find the highest bitrate audio/mp4 stream, after that we sort through the
     # garbage.
+    playstr = None
+    url = None
     if 'adaptiveFormats' in streams:
-        playstr = None
         bitrate = 0
         crap = {}
         worse = {}
@@ -74,9 +71,6 @@ def get_track(bId):
                     playstr['audioQuality'] = 'AUDIO_QUALITY_FECES'
     elif 'formats' in streams:
         # Great, we're really left with the dregs of quality.
-        # We can't know its playertype, so if there's no url, we cannot
-        # decode the signatureCipher and must fallback to youtube-dl
-        # to do the heavy lifting of decoding it.
         playstr = streams['formats'][0]
         if 'audioQuality' not in playstr:
             playstr['audioQuality'] = 'AUDIO_QUALITY_404'
@@ -84,52 +78,50 @@ def get_track(bId):
             logger.info('Found %s stream with %d ABR for %s',playstr['audioQuality'],playstr['averageBitrate'],bId)
             url = playstr['url']
         else:
-            logger.error('No url for %s. Falling back to youtube-dl.',bId)
+            logger.error('No url for %s.',bId)
     else:
         logger.error('No streams found for %s. Falling back to youtube-dl.',bId)
     if playstr is not None:
         # Use Youtube-DL's Info Extractor to decode the signature.
         if 'signatureCipher' in playstr:
-            logger.info('Found %s stream with %d ABR for %s',playstr['audioQuality'],playstr['averageBitrate'],bId)
-            global YTP
-            if (time.time() > YTP['expire']):
-                # Refresh our js player URL so YDL can decode the signature correctly.
-                response = requests.get('https://music.youtube.com',headers=API.headers,proxies=API.proxies)
-                m = re.search(r'jsUrl"\s*:\s*"([^"]+)"',response.text)
-                if m:
-                    YTP['url'] = m.group(1)
-                    YTP['expire'] = time.time() + 3600
-                    logger.info('YTMusic updated player URL to %s',YTP['url'])
-                else:
-                    logger.error('YTMusic unable to extract player URL.')
             sc = parse_qs(playstr['signatureCipher'])
             sig = YIE._decrypt_signature(sc['s'][0],bId,YTP['url'])
             url = sc['url'][0] + '&sig=' + sig + '&ratebypass=yes'
         elif 'url' in playstr:
-            logger.info('Found %s stream with %d ABR for %s',playstr['audioQuality'],playstr['averageBitrate'],bId)
             url = playstr['url']
+        else:
+            logger.error("Unable to get URL from stream for %s",bId)
+            return(None)
+        logger.info('Found %s stream with %d ABR for %s',playstr['audioQuality'],playstr['averageBitrate'],bId)
     if url is not None:
-        # Let YTMusic know we're playing this track so it will be added to our history.
-        trackurl = re.sub(r'plid=','list=',player_response['playbackTracking']['videostatsPlaybackUrl']['baseUrl'])
-        CPN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_'
-        params = {
-            'cpn': ''.join((CPN_ALPHABET[random.randint(0, 256) & 63] for _ in range(0, 16))),
-            'referrer': "https://music.youtube.com",
-            'cbr': text['cbr'][0],
-            'cbrver': text['cbrver'][0],
-            'c': text['c'][0],
-            'cver': text['cver'][0],
-            'cos': text['cos'][0],
-            'cosver': text['cosver'][0],
-            'cr': text['cr'][0],
-            'afmt': playstr['itag'],
-            'ver': 2,
-        }
-        tr = requests.get(trackurl,params=params,headers=API.headers,proxies=API.proxies)
-        logger.debug("%d code from '%s'",tr.status_code,tr.url)
         # Return the decoded youtube url to mopidy for playback.
         return(url)
     return None
+
+def scrobble(bId):
+    # Let YTMusic know we're playing this track so it will be added to our history.
+    endpoint = "https://www.youtube.com/get_video_info"
+    params = {"video_id": bId, "hl": API.language, "el": "detailpage", "c": "WEB_REMIX", "cver": "0.1"}
+    response = requests.get(endpoint,params,headers=API.headers,proxies=API.proxies)
+    text = parse_qs(response.text)
+    player_response = json.loads(text['player_response'][0])
+    trackurl = re.sub(r'plid=','list=',player_response['playbackTracking']['videostatsPlaybackUrl']['baseUrl'])
+    CPN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_'
+    params = {
+        'cpn': ''.join((CPN_ALPHABET[random.randint(0, 256) & 63] for _ in range(0, 16))),
+        'referrer': "https://music.youtube.com",
+        'cbr': text['cbr'][0],
+        'cbrver': text['cbrver'][0],
+        'c': text['c'][0],
+        'cver': text['cver'][0],
+        'cos': text['cos'][0],
+        'cosver': text['cosver'][0],
+        'cr': text['cr'][0],
+#       'afmt': playstr['itag'],
+        'ver': 2,
+    }
+    tr = requests.get(trackurl,params=params,headers=API.headers,proxies=API.proxies)
+    logger.debug("%d code from '%s'",tr.status_code,tr.url)
 
 def parse_uri(uri):
     components = uri.split(':')
@@ -578,16 +570,42 @@ def get_auto_playlists():
         logger.exception('YTMusic failed to load auto playlists')
     return(0)
 
-class YTMusicBackend(pykka.ThreadingActor, backend.Backend):
+def get_youtube_player():
+    # Refresh our js player URL so YDL can decode the signature correctly.
+    global YTP
+    response = requests.get('https://music.youtube.com',headers=API.headers,proxies=API.proxies)
+    m = re.search(r'jsUrl"\s*:\s*"([^"]+)"',response.text)
+    if m:
+        YTP['url'] = m.group(1)
+        YTP['expire'] = time.time() + 3600
+        logger.info('YTMusic updated player URL to %s',YTP['url'])
+    else:
+        logger.error('YTMusic unable to extract player URL.')
+
+class YTMusicBackend(pykka.ThreadingActor, backend.Backend, YTMusicScrobbleListener):
     def __init__(self, config, audio):
         super().__init__()
         self.config = config
         self.audio = audio
         self.uri_schemes = ["ytmusic"]
 
-        from youtube_dl import YoutubeDL
-        from ytmusicapi.ytmusic import YTMusic
+        self._auto_playlist_refresh_rate = 20 * 60
+        self._auto_playlist_refresh_timer = None
 
+        self._youtube_player_refresh_rate = 10 * 60
+        self._youtube_player_refresh_timer = None
+
+        if config["ytmusic"]["auth_json"]:
+            self._ytmusicapi_auth_json = config["ytmusic"]["auth_json"]
+            global AUTH
+            AUTH = True
+
+        self.playback = YTMusicPlaybackProvider(audio=audio, backend=self)
+        self.library = YTMusicLibraryProvider(backend=self)
+        if AUTH:
+            self.playlists = YTMusicPlaylistsProvider(backend=self)
+
+    def on_start(self):
         global YDL
         YDL = YoutubeDL({
             "format": "bestaudio/m4a/mp3/ogg/best",
@@ -597,22 +615,45 @@ class YTMusicBackend(pykka.ThreadingActor, backend.Backend):
         global YIE
         YIE = YDL.get_info_extractor('Youtube')
         global API
-        if config["ytmusic"]["auth_json"]:
-            API = YTMusic(config["ytmusic"]["auth_json"])
-            global AUTH
-            AUTH = True
+        if AUTH:
+            API = YTMusic(self._ytmusicapi_auth_json)
         else:
             API = YTMusic()
+        self._auto_playlist_refresh_timer = RepeatingTimer(
+            self._refresh_auto_playlists, self._auto_playlist_refresh_rate
+        )
+        self._auto_playlist_refresh_timer.start()
+        self._youtube_player_refresh_timer = RepeatingTimer(
+            self._refresh_youtube_player, self._youtube_player_refresh_rate
+        )
+        self._youtube_player_refresh_timer.start()
+    
+    def on_stop(self):
+        if self._auto_playlist_refresh_timer:
+            self._auto_playlist_refresh_timer.cancel()
+            self._auto_playlist_refresh_timer = None
+        if self._youtube_player_refresh_timer:
+            self._youtube_player_refresh_timer.cancel()
+            self._youtube_player_refresh_timer = None
 
+    def _refresh_auto_playlists(self):
+        t0 = time.time()
         get_auto_playlists()
+        t = time.time() - t0
+        logger.info("Auto Playlists refreshed in %.2f",t)
 
-        self.playback = YouTubePlaybackProvider(audio=audio, backend=self)
-        self.library = YouTubeLibraryProvider(backend=self)
-        if AUTH:
-            self.playlists = YouTubePlaylistsProvider(backend=self)
+    def _refresh_youtube_player(self):
+        t0 = time.time()
+        get_youtube_player()
+        t = time.time() - t0
+        logger.info("Youtube Player URL refreshed in %.2f",t)
+    
+    def scrobble_track(self,bId):
+        # Called through YTMusicScrobbleListener
+        scrobble(bId)
 
 
-class YouTubePlaybackProvider(backend.PlaybackProvider):
+class YTMusicPlaybackProvider(backend.PlaybackProvider):
     def __init__(self, audio, backend):
         super().__init__(audio, backend)
         self.last_id = None
@@ -632,7 +673,7 @@ class YouTubePlaybackProvider(backend.PlaybackProvider):
             return None
 
 
-class YouTubeLibraryProvider(backend.LibraryProvider):
+class YTMusicLibraryProvider(backend.LibraryProvider):
     root_directory = Ref.directory(uri="ytmusic:root", name="YouTube Music")
 
     def browse(self, uri):
@@ -912,7 +953,7 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
         return results
 
 
-class YouTubePlaylistsProvider(backend.PlaylistsProvider):
+class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
     def as_list(self):
         logger.info("YTMusic getting user playlists")
         refs = []
