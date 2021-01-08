@@ -310,7 +310,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                     )]
                 else:
                     artists = None
-    
+
                 if 'album' in track and track['album'] is not None:
                     if track['album']['id'] not in self.ALBUMS:
                         self.ALBUMS[track['album']['id']] = Album(
@@ -319,13 +319,13 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                             artists=artists,
                             num_tracks=None,
                             num_discs=None,
-                            date="1999",
+                            date="0000",
                             musicbrainz_id="",
                         )
                     album = self.ALBUMS[track['album']['id']]
                 else:
                     album = None
-    
+
                 if track["videoId"] not in self.TRACKS:
                     self.TRACKS[track["videoId"]] = Track(
                         uri=f"ytmusic:track:{track['videoId']}",
@@ -337,7 +337,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                         genre="",
                         track_no=None,
                         disc_no=None,
-                        date="1999",
+                        date="0000",
                         length=(int(duration[0]) * 60000 + int(duration[1]) * 1000),
                         bitrate=0,
                         comment="",
@@ -346,8 +346,8 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                     )
                 ret.append(self.TRACKS[track["videoId"]])
         return(ret)
-    
-    
+
+
     def uploadArtistToTracks(self,artist):
         ret = []
         for track in artist:
@@ -360,7 +360,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                         sortname=a["name"],
                         musicbrainz_id="",
                     )
-                artists.append(self.ARTISTS[a['id']])   
+                artists.append(self.ARTISTS[a['id']])
             if track['album']['id'] not in self.ALBUMS:
                 self.ALBUMS[track['album']['id']] = Album(
                     uri=f"ytmusic:album:{track['album']['id']}:upload",
@@ -368,7 +368,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                     artists=artists,
                     num_tracks=None,
                     num_discs=None,
-                    date="1999",
+                    date="0000",
                     musicbrainz_id="",
                 )
             self.TRACKS[track["videoId"]] = Track(
@@ -381,7 +381,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 genre="",
                 track_no=None,
                 disc_no=None,
-                date="1999",
+                date="0000",
                 length=None,
                 bitrate=0,
                 comment="",
@@ -390,8 +390,8 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
             )
             ret.append(self.TRACKS[track["videoId"]])
         return(ret)
-    
-    
+
+
     def artistToTracks(self,artist):
         if "songs" in artist and "browseId" in artist["songs"] and artist["songs"]["browseId"] is not None:
             res = self.backend.api.get_playlist(artist["songs"]["browseId"],limit=self.backend.playlist_item_limit)
@@ -399,8 +399,8 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
             logger.info('YTMusic found %d tracks for %s',len(tracks),artist['name'])
             return tracks
         return None
-    
-    
+
+
     def uploadAlbumToTracks(self,album, bId):
         ret = []
         if album['artist']['id'] not in self.ARTISTS:
@@ -443,8 +443,8 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                     )
                 ret.append(self.TRACKS[track["videoId"]])
         return(ret)
-    
-    
+
+
     def albumToTracks(self,album, bId):
         ret = []
         date = f"{album['releaseDate']['year']}"
@@ -456,7 +456,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                     name=artist["name"],
                     sortname=artist["name"],
                     musicbrainz_id="",
-                ) 
+                )
             artists.append(self.ARTISTS[artist['id']])
         if bId not in self.ALBUMS:
             self.ALBUMS[bId] = Album(
@@ -489,8 +489,8 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 )
             ret.append(self.TRACKS[song['videoId']])
         return(ret)
-    
-    
+
+
     def parseSearch(self, results, field=None, queries=[]):
         tracks = set()
         salbums = set()
@@ -528,7 +528,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                                     artists=artists,
                                     num_tracks=None,
                                     num_discs=None,
-                                    date="1999",
+                                    date="0000",
                                     musicbrainz_id="",
                                 )
                                 album = self.ALBUMS[result['album']['id']]
@@ -542,7 +542,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                             genre="",
                             track_no=None,
                             disc_no=None,
-                            date="1999",
+                            date="0000",
                             length=(length[0] * 60 * 1000) + (length[1] * 1000),
                             bitrate=0,
                             comment="",
@@ -650,7 +650,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                                             genre="",
                                             track_no=None,
                                             disc_no=None,
-                                            date="1999",
+                                            date="0000",
                                             length=None,
                                             bitrate=0,
                                             comment="",
