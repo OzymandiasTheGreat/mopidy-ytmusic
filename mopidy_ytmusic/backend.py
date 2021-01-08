@@ -26,6 +26,8 @@ AUTH = False
 TRACKS = {}
 # Albums dict
 ALBUMS = {'PLAYLISTS':Album(uri="ytmusic:album:PLAYLISTS",name="Playlists",artists=None,date=time.strftime('%Y'),musicbrainz_id="",num_tracks=None,num_discs=None)}
+# Artists dict
+ARTISTS = {}
 # Auto Playlist browser info
 YTBROWSE = { 'expire': 0, 'sections': [] }
 
@@ -140,13 +142,17 @@ def playlistToTracks(pls):
     if "tracks" in pls:
         for track in pls["tracks"]:
             duration = (track['duration'] if 'duration' in track else track['length']).split(":")
+            artists = []
             if 'artists' in track:
-                artists = [Artist(
-                    uri=f"ytmusic:artist:{a['id']}",
-                    name=a["name"],
-                    sortname=a["name"],
-                    musicbrainz_id="",
-                ) for a in track["artists"]]
+                for a in track['artists']:
+                    if a['id'] not in ARTISTS:
+                        ARTISTS[a['id']] = Artist(
+                            uri=f"ytmusic:artist:{a['id']}",
+                            name=a["name"],
+                            sortname=a["name"],
+                            musicbrainz_id="",
+                        )
+                    artists.append(ARTISTS[a['id']])
             elif 'byline' in track:
                 artists = [Artist(
                     name=track["byline"],
@@ -157,35 +163,38 @@ def playlistToTracks(pls):
                 artists = None
 
             if 'album' in track and track['album'] is not None:
-                album = Album(
-                    uri=f"ytmusic:album:{track['album']['id']}",
-                    name=track["album"]["name"],
-                    artists=artists,
-                    num_tracks=None,
-                    num_discs=None,
-                    date="1999",
-                    musicbrainz_id="",
-                )
+                if track['album']['id'] not in ALBUMS:
+                    ALBUMS[track['album']['id']] = Album(
+                        uri=f"ytmusic:album:{track['album']['id']}",
+                        name=track["album"]["name"],
+                        artists=artists,
+                        num_tracks=None,
+                        num_discs=None,
+                        date="1999",
+                        musicbrainz_id="",
+                    )
+                album = ALBUMS[track['album']['id']]
             else:
                 album = None
 
-            TRACKS[track["videoId"]] = Track(
-                uri=f"ytmusic:track:{track['videoId']}",
-                name=track["title"],
-                artists=artists,
-                album=album,
-                composers=[],
-                performers=[],
-                genre="",
-                track_no=None,
-                disc_no=None,
-                date="1999",
-                length=(int(duration[0]) * 60000 + int(duration[1]) * 1000),
-                bitrate=0,
-                comment="",
-                musicbrainz_id="",
-                last_modified=None,
-            )
+            if track["videoId"] not in TRACKS:
+                TRACKS[track["videoId"]] = Track(
+                    uri=f"ytmusic:track:{track['videoId']}",
+                    name=track["title"],
+                    artists=artists,
+                    album=album,
+                    composers=[],
+                    performers=[],
+                    genre="",
+                    track_no=None,
+                    disc_no=None,
+                    date="1999",
+                    length=(int(duration[0]) * 60000 + int(duration[1]) * 1000),
+                    bitrate=0,
+                    comment="",
+                    musicbrainz_id="",
+                    last_modified=None,
+                )
             ret.append(TRACKS[track["videoId"]])
     return(ret)
 
@@ -193,29 +202,31 @@ def playlistToTracks(pls):
 def uploadArtistToTracks(artist):
     ret = []
     for track in artist:
-        TRACKS[track["videoId"]] = Track(
-            uri=f"ytmusic:track:{track['videoId']}",
-            name=track["title"],
-            artists=[Artist(
-                uri=f"ytmusic:artist:{a['id']}:upload",
-                name=a["name"],
-                sortname=a["name"],
-                musicbrainz_id="",
-            ) for a in track["artist"]],
-            album=Album(
-                uri=f"ytmusic:album:{track['album']['id']}:upload",
-                name=track["album"]["name"],
-                artists=[Artist(
+        artists = []
+        for a in track["artist"]:
+            if a['id'] not in ARTISTS:
+                ARTISTS[a['id']] = Artist(
                     uri=f"ytmusic:artist:{a['id']}:upload",
                     name=a["name"],
                     sortname=a["name"],
                     musicbrainz_id="",
-                ) for a in track["artist"]],
+                )
+            artists.append(ARTISTS[a['id']])   
+        if track['album']['id'] not in ALBUMS:
+            ALBUMS[track['album']['id']] = Album(
+                uri=f"ytmusic:album:{track['album']['id']}:upload",
+                name=track["album"]["name"],
+                artists=artists,
                 num_tracks=None,
                 num_discs=None,
                 date="1999",
                 musicbrainz_id="",
-            ),
+            )
+        TRACKS[track["videoId"]] = Track(
+            uri=f"ytmusic:track:{track['videoId']}",
+            name=track["title"],
+            artists=artists,
+            album=ALBUMS[track['album']['id']],
             composers=[],
             performers=[],
             genre="",
@@ -233,84 +244,54 @@ def uploadArtistToTracks(artist):
 
 
 def artistToTracks(artist):
-    tracks = ("songs" in artist and "results" in artist["songs"] and artist["songs"]["results"]) or []
-    ret = []
-    for track in tracks:
-        TRACKS[track["videoId"]] = Track(
-            uri=f"ytmusic:track:{track['videoId']}",
-            name=track["title"],
-            artists=[Artist(
-                uri=f"ytmusic:artist:{a['id']}",
-                name=a["name"],
-                sortname=a["name"],
-                musicbrainz_id="",
-            ) for a in track["artists"]],
-            album=Album(
-                uri=f"ytmusic:album:{track['album']['id']}",
-                name=track["album"]["name"],
-                artists=[Artist(
-                    uri=f"ytmusic:artist:{a['id']}",
-                    name=a["name"],
-                    sortname=a["name"],
-                    musicbrainz_id="",
-                ) for a in track["artists"]],
-                num_tracks=None,
-                num_discs=None,
-                date="1999",
-                musicbrainz_id="",
-            ),
-            composers=[],
-            performers=[],
-            genre="",
-            track_no=None,
-            disc_no=None,
-            date="1999",
-            length=None,
-            bitrate=0,
-            comment="",
-            musicbrainz_id="",
-            last_modified=None,
-        )
-        ret.append(TRACKS[track["videoId"]])
-    return(ret)
+    if "songs" in artist and "browseId" in artist["songs"] and artist["songs"]["browseId"] is not None:
+        res = API.get_playlist(artist["songs"]["browseId"])
+        tracks = playlistToTracks(res)
+        logger.info('YTMusic found %d tracks for %s',len(tracks),artist['name'])
+        return tracks
+    return None
 
 
 def uploadAlbumToTracks(album, bId):
     ret = []
-    artists = [Artist(
-        uri=f"ytmusic:artist:{album['artist']['id']}:upload",
-        name=album["artist"]["name"],
-        sortname=album["artist"]["name"],
-        musicbrainz_id="",
-    )]
-    albumRef = Album(
-        uri=f"ytmusic:album:{bId}:upload",
-        name=album["title"],
-        artists=artists,
-        num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
-        num_discs=None,
-        date=f"{album['year']}",
-        musicbrainz_id="",
-    )
+    if album['artist']['id'] not in ARTISTS:
+        ARTISTS[album['artist']['id']] = Artist(
+            uri=f"ytmusic:artist:{album['artist']['id']}:upload",
+            name=album["artist"]["name"],
+            sortname=album["artist"]["name"],
+            musicbrainz_id="",
+        )
+    artists = [ ARTISTS[album['artist']['id']] ]
+    if bId not in ALBUMS:
+        ALBUMS[bId] = Album(
+            uri=f"ytmusic:album:{bId}:upload",
+            name=album["title"],
+            artists=artists,
+            num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
+            num_discs=None,
+            date=f"{album['year']}",
+            musicbrainz_id="",
+        )
     if "tracks" in album:
         for track in album["tracks"]:
-            TRACKS[track["videoId"]] = Track(
-                uri=f"ytmusic:track:{track['videoId']}",
-                name=track["title"],
-                artists=artists,
-                album=albumRef,
-                composers=[],
-                performers=[],
-                genre="",
-                track_no=None,
-                disc_no=None,
-                date=f"{album['year']}",
-                length=None,
-                bitrate=0,
-                comment="",
-                musicbrainz_id="",
-                last_modified=None,
-            )
+            if track["videoId"] not in TRACKS:
+                TRACKS[track["videoId"]] = Track(
+                    uri=f"ytmusic:track:{track['videoId']}",
+                    name=track["title"],
+                    artists=artists,
+                    album=ALBUMS[bId],
+                    composers=[],
+                    performers=[],
+                    genre="",
+                    track_no=None,
+                    disc_no=None,
+                    date=f"{album['year']}",
+                    length=None,
+                    bitrate=0,
+                    comment="",
+                    musicbrainz_id="",
+                    last_modified=None,
+                )
             ret.append(TRACKS[track["videoId"]])
     return(ret)
 
@@ -318,41 +299,46 @@ def uploadAlbumToTracks(album, bId):
 def albumToTracks(album, bId):
     ret = []
     date = f"{album['releaseDate']['year']}"
-    artists = [Artist(
-        uri=f"ytmusic:artist:{artist['id']}",
-        name=artist["name"],
-        sortname=artist["name"],
-        musicbrainz_id="",
-    ) for artist in album["artist"]]
-    albumObj = Album(
-        uri=f"ytmusic:album:{bId}",
-        name=album["title"],
-        artists=artists,
-        num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
-        num_discs=None,
-        date=date,
-        musicbrainz_id="",
-    )
-    for song in album["tracks"]:
-        track = Track(
-            uri=f"ytmusic:track:{song['videoId']}",
-            name=song["title"],
+    artists = []
+    for artist in album['artist']:
+        if artist['id'] not in ARTISTS:
+            ARTISTS[artist['id']] = Artist(
+                uri=f"ytmusic:artist:{artist['id']}",
+                name=artist["name"],
+                sortname=artist["name"],
+                musicbrainz_id="",
+            ) 
+        artists.append(ARTISTS[artist['id']])
+    if bId not in ALBUMS:
+        ALBUMS[bId] = Album(
+            uri=f"ytmusic:album:{bId}",
+            name=album["title"],
             artists=artists,
-            album=albumObj,
-            composers=[],
-            performers=[],
-            genre="",
-            track_no=int(song["index"]) if str(song["index"]).isnumeric() else None,
-            disc_no=None,
+            num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
+            num_discs=None,
             date=date,
-            length=int(song["lengthMs"]) if str(song["lengthMs"]).isnumeric() else None,
-            bitrate=0,
-            comment="",
             musicbrainz_id="",
-            last_modified=None,
         )
-        TRACKS[song["videoId"]] = track
-        ret.append(track)
+    for song in album["tracks"]:
+        if song['videoId'] not in TRACKS:
+            TRACKS[song["videoId"]] = Track(
+                uri=f"ytmusic:track:{song['videoId']}",
+                name=song["title"],
+                artists=artists,
+                album=ALBUMS[bId],
+                composers=[],
+                performers=[],
+                genre="",
+                track_no=int(song["index"]) if str(song["index"]).isnumeric() else None,
+                disc_no=None,
+                date=date,
+                length=int(song["lengthMs"]) if str(song["lengthMs"]).isnumeric() else None,
+                bitrate=0,
+                comment="",
+                musicbrainz_id="",
+                last_modified=None,
+            )
+        ret.append(TRACKS[song['videoId']])
     return(ret)
 
 
@@ -373,64 +359,70 @@ def parseSearch(results, field=None, queries=[]):
                     length = [0, 0]
                 if result['videoId'] == None:
                     continue
-                track = Track(
-                    uri=f"ytmusic:track:{result['videoId']}",
-                    name=result["title"],
-                    artists=[Artist(
-                        uri=f"ytmusic:artist:{a['id']}",
-                        name=a["name"],
-                        sortname=a["name"],
-                        musicbrainz_id="",
-                    ) for a in result["artists"]],
-                    album=Album(
-                        uri=f"ytmusic:album:{result['album']['id']}",
-                        name=result["album"]["name"],
-                        artists=[Artist(
-                            uri=f"ytmusic:artist:{a['id']}",
-                            name=a["name"],
-                            sortname=a["name"],
-                            musicbrainz_id="",
-                        ) for a in result["artists"]],
-                        num_tracks=None,
-                        num_discs=None,
+                if result['videoId'] not in TRACKS:
+                    artists = []
+                    for a in result['artists']:
+                        if a['id'] not in ARTISTS:
+                            ARTISTS[a['id']] = Artist(
+                                uri=f"ytmusic:artist:{a['id']}",
+                                name=a["name"],
+                                sortname=a["name"],
+                                musicbrainz_id="",
+                            )
+                        artists.append(ARTISTS[a['id']])
+                    album = None
+                    if 'album' in result:
+                        if result['album']['id'] not in ALBUMS:
+                            ALBUMS[result['album']['id']] = Album(
+                                uri=f"ytmusic:album:{result['album']['id']}",
+                                name=result["album"]["name"],
+                                artists=artists,
+                                num_tracks=None,
+                                num_discs=None,
+                                date="1999",
+                                musicbrainz_id="",
+                            )
+                            album = ALBUMS[result['album']['id']]
+                    TRACKS[result['videoId']] = Track(
+                        uri=f"ytmusic:track:{result['videoId']}",
+                        name=result["title"],
+                        artists=artists,
+                        album=album,
+                        composers=[],
+                        performers=[],
+                        genre="",
+                        track_no=None,
+                        disc_no=None,
                         date="1999",
+                        length=(length[0] * 60 * 1000) + (length[1] * 1000),
+                        bitrate=0,
+                        comment="",
                         musicbrainz_id="",
-                    ) if "album" in result else None,
-                    composers=[],
-                    performers=[],
-                    genre="",
-                    track_no=None,
-                    disc_no=None,
-                    date="1999",
-                    length=(length[0] * 60 * 1000) + (length[1] * 1000),
-                    bitrate=0,
-                    comment="",
-                    musicbrainz_id="",
-                    last_modified=None,
-                )
-                tracks.add(track)
+                        last_modified=None,
+                    )
+                tracks.add(TRACKS[result['videoId']])
         elif result["resultType"] == "album":
             if field == "album" and not any(q.casefold() == result["title"].casefold() for q in queries):
                 continue
             try:
                 album = API.get_album(result["browseId"])
-                artists = [Artist(
-                    uri="",
-                    name=result["artist"],
-                    sortname=result["artist"],
-                    musicbrainz_id="",
-                )]
-                date = result['year']
-                albumObj = Album(
-                    uri=f"ytmusic:album:{result['browseId']}",
-                    name=album["title"],
-                    artists=artists,
-                    num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
-                    num_discs=None,
-                    date=date,
-                    musicbrainz_id="",
-                )
-                salbums.add(albumObj)
+                if result["browseId"] not in ALBUMS:
+                    date = result['year']
+                    ALBUMS[result['browseId']] = Album(
+                        uri=f"ytmusic:album:{result['browseId']}",
+                        name=album["title"],
+                        artists=[Artist(
+                            uri="",
+                            name=result["artist"],
+                            sortname=result["artist"],
+                            musicbrainz_id="",
+                        )],
+                        num_tracks=int(album["trackCount"]) if str(album["trackCount"]).isnumeric() else None,
+                        num_discs=None,
+                        date=date,
+                        musicbrainz_id="",
+                    )
+                salbums.add(ALBUMS[result['browseId']])
             except Exception:
                 logger.exception("YTMusic failed parsing album %s", result["title"])
         elif result["resultType"] == "artist":
@@ -438,95 +430,85 @@ def parseSearch(results, field=None, queries=[]):
                 continue
             try:
                 artistq = API.get_artist(result["browseId"])
-                artist = Artist(
-                    uri=f"ytmusic:artist:{result['browseId']}",
-                    name=artistq["name"],
-                    sortname=artistq["name"],
-                    musicbrainz_id="",
-                )
-                sartists.add(artist)
+                if result['browseId'] not in ARTISTS:
+                    ARTISTS[result['browseId']] = Artist(
+                        uri=f"ytmusic:artist:{result['browseId']}",
+                        name=artistq["name"],
+                        sortname=artistq["name"],
+                        musicbrainz_id="",
+                    )
+                sartists.add(ARTISTS[result['browseId']])
                 if 'albums' in artistq:
                     if 'params' in artistq['albums']:
                         albums = API.get_artist_albums(artistq["channelId"],artistq["albums"]["params"])
                         for album in albums:
-                            albumObj = Album(
-                                uri=f"ytmusic:album:{album['browseId']}",
-                                name=album["title"],
-                                artists=[artist],
-                                date=album['year'],
-                                musicbrainz_id="",
-                            )
-                            salbums.add(albumObj)
+                            if album['browseId'] not in ALBUMS:
+                                ALBUMS[album['browseId']] = Album(
+                                    uri=f"ytmusic:album:{album['browseId']}",
+                                    name=album["title"],
+                                    artists=[ARTISTS[result['browseId']]],
+                                    date=album['year'],
+                                    musicbrainz_id="",
+                                )
+                            salbums.add(ALBUMS[album['browseId']])
                     elif 'results' in artistq['albums']:
                         for album in artistq["albums"]["results"]:
-                            albumObj = Album(
-                                uri=f"ytmusic:album:{album['browseId']}",
-                                name=album["title"],
-                                artists=[artist],
-                                date=album['year'],
-                                musicbrainz_id="",
-                            )
-                            salbums.add(albumObj)
+                            if album['browseId'] not in ALBUMS:
+                                ALBUMS[album['browseId']] = Album(
+                                    uri=f"ytmusic:album:{album['browseId']}",
+                                    name=album["title"],
+                                    artists=[ARTISTS[result['browseId']]],
+                                    date=album['year'],
+                                    musicbrainz_id="",
+                                )
+                            salbums.add(ALBUMS[album['browseId']])
                 if 'singles' in artistq and 'results' in artistq['singles']:
                     for single in artistq['singles']['results']:
-                        albumObj = Album(
-                            uri=f"ytmusic:album:{single['browseId']}",
-                            name=single['title'],
-                            artists=[artist],
-                            date=single['year'],
-                            musicbrainz_id="",
-                        )
-                        salbums.add(albumObj)
+                        if single['browseId'] not in ALBUMS:
+                            ALBUMS[single['browseId']] = Album(
+                                uri=f"ytmusic:album:{single['browseId']}",
+                                name=single['title'],
+                                artists=[ARTISTS[result['browseId']]],
+                                date=single['year'],
+                                musicbrainz_id="",
+                            )
+                        salbums.add(ALBUMS[single['browseId']])
                 if 'songs' in artistq:
-                    if artistq['songs']['browseId'] is not None:
-                        track = Track (
-                            uri=f"ytmusic:playlist:{artistq['songs']['browseId']}",
-                            name=f"{artistq['name']} playlist",
-                            artists=[artist],
-                            album=ALBUMS['PLAYLISTS'],
-                            composers=[],
-                            performers=[],
-                            genre="",
-                            track_no=None,
-                            disc_no=None,
-                            date="1999",
-                            length=None,
-                            bitrate=0,
-                            comment="",
-                            musicbrainz_id="",
-                        )
                     if 'results' in artistq['songs']:
                         for song in artistq['songs']['results']:
                             if song['videoId'] in TRACKS:
                                 tracks.add(TRACKS[song['videoId']])
                             else:
-                                albumObj = None
+                                album = None
                                 if 'album' in song:
-                                    albumObj = Album(
-                                        uri=f"ytmusic:album:{song['album']['id']}",
-                                        name=song['album']['name'],
-                                        artists=[artist],
-                                        date='1999',
+                                    if song['album']['id'] not in ALBUMS:
+                                        ALBUMS[song['album']['id']] = Album(
+                                            uri=f"ytmusic:album:{song['album']['id']}",
+                                            name=song['album']['name'],
+                                            artists=[ARTISTS[result['browseId']]],
+                                            date='1999',
+                                            musicbrainz_id="",
+                                        )
+                                    album = ALBUMS[song['album']['id']]
+                                if song['videoId'] not in TRACKS:
+                                    TRACKS[song['videoId']] = Track (
+                                        uri=f"ytmusic:track:{song['videoId']}",
+                                        name=song['title'],
+                                        artists=[ARTISTS[result['browseId']]],
+                                        album=album,
+                                        composers=[],
+                                        performers=[],
+                                        genre="",
+                                        track_no=None,
+                                        disc_no=None,
+                                        date="1999",
+                                        length=None,
+                                        bitrate=0,
+                                        comment="",
                                         musicbrainz_id="",
+                                        last_modified=None,
                                     )
-                                track = Track (
-                                    uri=f"ytmusic:track:{song['videoId']}",
-                                    name=song['title'],
-                                    artists=[artist],
-                                    album=albumObj,
-                                    composers=[],
-                                    performers=[],
-                                    genre="",
-                                    track_no=None,
-                                    disc_no=None,
-                                    date="1999",
-                                    length=None,
-                                    bitrate=0,
-                                    comment="",
-                                    musicbrainz_id="",
-                                    last_modified=None,
-                                )
-                                tracks.add(track)
+                                tracks.add(TRACKS[song['videoId']])
             except Exception:
                 logger.exception("YTMusic failed parsing artist %s", result["artist"])
     tracks = list(tracks)
@@ -954,46 +936,7 @@ class YouTubePlaylistsProvider(backend.PlaylistsProvider):
             logger.exception("YTMusic playlist lookup failed")
             pls = None
         if pls:
-            tracks = []
-            if "tracks" in pls:
-                for track in pls["tracks"]:
-                    duration = track["duration"].split(":")
-                    artists = [Artist(
-                        uri=f"ytmusic:artist:{a['id']}",
-                        name=a["name"],
-                        sortname=a["name"],
-                        musicbrainz_id="",
-                    ) for a in track["artists"]]
-                    if track["album"]:
-                        album = Album(
-                            uri=f"ytmusic:album:{track['album']['id']}",
-                            name=track["album"]["name"],
-                            artists=artists,
-                            num_tracks=None,
-                            num_discs=None,
-                            date="1999",
-                            musicbrainz_id="",
-                        )
-                    else:
-                        album = None
-                    TRACKS[track["videoId"]] = Track(
-                        uri=f"ytmusic:track:{track['videoId']}",
-                        name=track["title"],
-                        artists=artists,
-                        album=album,
-                        composers=[],
-                        performers=[],
-                        genre="",
-                        track_no=None,
-                        disc_no=None,
-                        date="1999",
-                        length=(int(duration[0]) * 60 * 1000) + (int(duration[1]) * 1000),
-                        bitrate=0,
-                        comment="",
-                        musicbrainz_id="",
-                        last_modified=None,
-                    )
-                    tracks.append(TRACKS[track['videoId']])
+            tracks = playlistToTracks(pls)
             return Playlist(
                 uri=f"ytmusic:playlist:{pls['id']}",
                 name=pls["title"],
@@ -1010,47 +953,8 @@ class YouTubePlaylistsProvider(backend.PlaylistsProvider):
             logger.exception("YTMusic failed getting playlist items")
             pls = None
         if pls:
-            refs = []
-            if "tracks" in pls:
-                for track in pls["tracks"]:
-                    refs.append(Ref.track(uri=f"ytmusic:track:{track['videoId']}", name=track["title"]))
-                    duration = track["duration"].split(":")
-                    artists = [Artist(
-                        uri=f"ytmusic:artist:{a['id']}",
-                        name=a["name"],
-                        sortname=a["name"],
-                        musicbrainz_id="",
-                    ) for a in track["artists"]]
-                    if 'album' in track and track["album"] is not None:
-                        album = Album(
-                            uri=f"ytmusic:album:{track['album']['id']}",
-                            name=track["album"]["name"],
-                            artists=artists,
-                            num_tracks=None,
-                            num_discs=None,
-                            date="1999",
-                            musicbrainz_id="",
-                        )
-                    else:
-                        album = None
-                    TRACKS[track["videoId"]] = Track(
-                        uri=f"ytmusic:track:{track['videoId']}",
-                        name=track["title"],
-                        artists=artists,
-                        album=album,
-                        composers=[],
-                        performers=[],
-                        genre="",
-                        track_no=None,
-                        disc_no=None,
-                        date="1999",
-                        length=(int(duration[0]) * 60 * 1000) + (int(duration[1]) * 1000),
-                        bitrate=0,
-                        comment="",
-                        musicbrainz_id="",
-                        last_modified=None,
-                    )
-            return refs
+            tracks = playlistToTracks(pls)
+            return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
         return None
 
     def create(self, name):
