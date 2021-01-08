@@ -25,13 +25,13 @@ class Extension(ext.Extension):
         return schema
 
     def get_command(self):
-        from .command import YTMusicCommand
+        from .command import YoutubeMusicCommand
 
-        return YTMusicCommand()
+        return YoutubeMusicCommand()
 
     def setup(self, registry):
-        from .backend import YTMusicBackend
-        from .scrobble_fe import YTMusicScrobbleFE
+        from .backend import YoutubeMusicBackend
+        from .scrobble_fe import YoutubeMusicScrobbleFE
 
-        registry.add("backend", YTMusicBackend)
-        registry.add("frontend", YTMusicScrobbleFE)
+        registry.add("backend", YoutubeMusicBackend)
+        registry.add("frontend", YoutubeMusicScrobbleFE)

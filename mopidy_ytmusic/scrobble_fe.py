@@ -4,7 +4,7 @@ import pykka
 from mopidy import core, listener
 from mopidy_ytmusic import logger
 
-class YTMusicScrobbleFE(pykka.ThreadingActor, core.CoreListener):
+class YoutubeMusicScrobbleFE(pykka.ThreadingActor, core.CoreListener):
     def __init__(self, config, core):
         super().__init__()
 
@@ -23,12 +23,12 @@ class YTMusicScrobbleFE(pykka.ThreadingActor, core.CoreListener):
         bId = track.uri.split(":")[2]
         logger.debug("Scrobbling: %s", bId)
         listener.send(
-            YTMusicScrobbleListener,
+            YoutubeMusicScrobbleListener,
             "scrobble_track",
             bId=bId,
         )
 
 
-class YTMusicScrobbleListener(listener.Listener):
+class YoutubeMusicScrobbleListener(listener.Listener):
     def scrobble_track(self, bId):
         pass

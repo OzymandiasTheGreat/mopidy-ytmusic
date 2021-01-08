@@ -4,7 +4,7 @@ from mopidy import commands
 from mopidy_ytmusic import logger
 
 
-class YTMusicCommand(commands.Command):
+class YoutubeMusicCommand(commands.Command):
     def __init__(self):
         super().__init__()
         self.add_child("setup", SetupCommand())
