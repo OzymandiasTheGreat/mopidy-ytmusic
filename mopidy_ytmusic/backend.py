@@ -155,6 +155,11 @@ def parse_auto_playlists(res):
             pagetype = nav(item,['musicTwoRowItemRenderer','navigationEndpoint','browseEndpoint','browseEndpointContextSupportedConfigs','browseEndpointContextMusicConfig','pageType'],True)
             ititle = nav(item,['musicTwoRowItemRenderer'] + TITLE_TEXT).strip()
             if pagetype == 'MUSIC_PAGE_TYPE_PLAYLIST':
+                if 'subtitle' in item['musicTwoRowItemRenderer']:
+                    ititle += ' ('
+                    for st in item['musicTwoRowItemRenderer']['subtitle']['runs']:
+                        ititle += st['text']
+                    ititle += ')'
                 browse[-1]['items'].append({'type':'playlist','uri':f"ytmusic:playlist:{brId}",'name':ititle})
             elif pagetype == 'MUSIC_PAGE_TYPE_ARTIST':
                 browse[-1]['items'].append({'type':'artist','uri':f"ytmusic:artist:{brId}",'name':ititle+' (Artist)'})
