@@ -33,6 +33,7 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
         self._youtube_player_refresh_timer = None
 
         self.playlist_item_limit = config["ytmusic"]["playlist_item_limit"]
+        self.stream_preference = config["ytmusic"]["stream_preference"]
 
         self.api = None
         if config["ytmusic"]["auth_json"]:

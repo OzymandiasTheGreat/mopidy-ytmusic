@@ -50,6 +50,29 @@ Authenticated users have access to their listening history, likes,
 playlists and uploaded music.  Premium users have access to high quality audio
 streams and other premium content. 
 
+Other configuration options are as follows:
+
+- :code:`auto_playlist_refresh` - time (in minutes) to refresh the Auto playlists.  Default: 30
+- :code:`youtube_player_refresh` - time (in minutes) to refresh the Youtube player url (used for decoding the signature).  Default: 15
+- :code:`playlist_item_limit` - Number of items to grab from playlists.  This is not exact.  Default: 100
+- :code:`stream_preference` - Comma separated list of itags in the order of preference you want for stream.  Default: "141, 251, 140, 250, 249"
+
+Info on YouTube Music streams:
+
++------+-------+-------------+----------+
+| itag | Codec | Sample Rate | Bit Rate |
++======+=======+=============+==========+
+| 141  | AAC   | 44.1kHz     | ~260kbps |
++------+-------+-------------+----------+
+| 251  | Opus  | 48kHz       | ~150kbps |
++------+-------+-------------+----------+
+| 140  | AAC   | 44.1kHz     | ~132kbps |
++------+-------+-------------+----------+
+| 250  | Opus  | 48kHz       | ~80kbps  |
++------+-------+-------------+----------+
+| 249  | Opus  | 48kHz       | ~64kbps  |
++------+-------+-------------+----------+
+
 Build for Local Install
 =======================
 
