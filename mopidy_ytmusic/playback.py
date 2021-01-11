@@ -1,3 +1,5 @@
+import requests
+import re
 from urllib.parse import parse_qs
 from mopidy import backend, httpclient
 from mopidy_ytmusic import logger
@@ -32,17 +34,27 @@ class YoutubeMusicPlaybackProvider(backend.PlaybackProvider):
         streams = self.backend.api.get_streaming_data(bId)
         playstr = None
         url = None
-        if 'adaptiveFormats' in streams:
-            if self.backend.stream_preference:
-                # Try to find stream by our preference order.
-                tags = {}
+        if self.backend.stream_preference:
+            # Try to find stream by our preference order.
+            tags = {}
+            if 'adaptiveFormats' in streams:
                 for stream in streams['adaptiveFormats']:
                     tags[str(stream['itag'])] = stream
-                for i, p in enumerate(self.backend.stream_preference, start=1):
-                    if str(p) in tags:
-                        playstr = tags[str(p)]
-                        logger.debug("Found #%d preference stream %s",i,str(p))
-                        break
+            elif 'dashManifestUrl' in streams:
+                # Grab the dashmanifest XML and parse out the streams from it
+                dash = requests.get(streams['dashManifestUrl'])
+                formats = re.findall(r'<Representation id="(\d+)" .*? bandwidth="(\d+)".*?BaseURL>(.*?)</BaseURL',dash.text)
+                for stream in formats:
+                    tags[stream[0]] = {
+                        'url': stream[2],
+                        'audioQuality': 'ITAG_'+stream[0],
+                        'averageBitrate': int(stream[1]),
+                    }
+            for i, p in enumerate(self.backend.stream_preference, start=1):
+                if str(p) in tags:
+                    playstr = tags[str(p)]
+                    logger.debug("Found #%d preference stream %s",i,str(p))
+                    break
         if playstr is None:
             # Couldn't find our preference, let's try something else:
             if 'adaptiveFormats' in streams:
