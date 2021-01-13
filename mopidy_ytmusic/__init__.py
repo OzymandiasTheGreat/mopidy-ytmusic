@@ -9,7 +9,6 @@ __version__ = pkg_resources.get_distribution("Mopidy-YTMusic").version
 
 logger = logging.getLogger(__name__)
 
-
 class Extension(ext.Extension):
 
     dist_name = "Mopidy-YTMusic"
@@ -34,13 +33,13 @@ class Extension(ext.Extension):
         return schema
 
     def get_command(self):
-        from .command import YoutubeMusicCommand
+        from .command import YTMusicCommand
 
-        return YoutubeMusicCommand()
+        return YTMusicCommand()
 
     def setup(self, registry):
-        from .backend import YoutubeMusicBackend
-        from .scrobble_fe import YoutubeMusicScrobbleFE
+        from .backend import YTMusicBackend
+        from .scrobble_fe import YTMusicScrobbleFE
 
-        registry.add("backend", YoutubeMusicBackend)
-        registry.add("frontend", YoutubeMusicScrobbleFE)
+        registry.add("backend", YTMusicBackend)
+        registry.add("frontend", YTMusicScrobbleFE)

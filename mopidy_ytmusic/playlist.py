@@ -2,7 +2,7 @@ from mopidy import backend
 from mopidy_ytmusic import logger
 from mopidy.models import Ref, Playlist
 
-class YoutubeMusicPlaylistsProvider(backend.PlaylistsProvider):
+class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
     def as_list(self):
         logger.info("YTMusic getting user playlists")
         refs = []

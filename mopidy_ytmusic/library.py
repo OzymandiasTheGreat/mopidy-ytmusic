@@ -3,8 +3,7 @@ from mopidy.models import Ref, Track, Album, Artist, SearchResult
 from mopidy_ytmusic import logger
 from ytmusicapi.parsers.utils import nav, get_continuations, CAROUSEL_TITLE, TITLE, TITLE_TEXT, NAVIGATION_BROWSE_ID, SINGLE_COLUMN_TAB, SECTION_LIST
 
-
-class YoutubeMusicLibraryProvider(backend.LibraryProvider):
+class YTMusicLibraryProvider(backend.LibraryProvider):
     root_directory = Ref.directory(uri="ytmusic:root", name="YouTube Music")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

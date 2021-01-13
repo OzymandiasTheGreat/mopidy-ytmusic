@@ -13,12 +13,12 @@ from ytmusicapi.ytmusic import YTMusic
 from ytmusicapi.parsers.utils import nav, get_continuations, CAROUSEL_TITLE, TITLE, TITLE_TEXT, NAVIGATION_BROWSE_ID, SINGLE_COLUMN_TAB, SECTION_LIST
 
 from .repeating_timer import RepeatingTimer
-from .scrobble_fe import YoutubeMusicScrobbleListener
-from .playback import YoutubeMusicPlaybackProvider
-from .library import YoutubeMusicLibraryProvider
-from .playlist import YoutubeMusicPlaylistsProvider
+from .scrobble_fe import YTMusicScrobbleListener
+from .playback import YTMusicPlaybackProvider
+from .library import YTMusicLibraryProvider
+from .playlist import YTMusicPlaylistsProvider
 
-class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScrobbleListener):
+class YTMusicBackend(pykka.ThreadingActor, backend.Backend, YTMusicScrobbleListener):
     def __init__(self, config, audio):
         super().__init__()
         self.config = config
@@ -44,10 +44,10 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
             self._ytmusicapi_auth_json = config["ytmusic"]["auth_json"]
             self.auth = True
 
-        self.playback = YoutubeMusicPlaybackProvider(audio=audio, backend=self)
-        self.library = YoutubeMusicLibraryProvider(backend=self)
+        self.playback = YTMusicPlaybackProvider(audio=audio, backend=self)
+        self.library = YTMusicLibraryProvider(backend=self)
         if self.auth:
-            self.playlists = YoutubeMusicPlaylistsProvider(backend=self)
+            self.playlists = YTMusicPlaylistsProvider(backend=self)
 
     def on_start(self):
         if self.auth:
@@ -119,7 +119,7 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
         return(None)
 
     def scrobble_track(self,bId):
-        # Called through YoutubeMusicScrobbleListener
+        # Called through YTMusicScrobbleListener
         # Let YTMusic know we're playing this track so it will be added to our history.
         endpoint = "https://www.youtube.com/get_video_info"
         params = {"video_id": bId, "hl": self.api.language, "el": "detailpage", "c": "WEB_REMIX", "cver": "0.1"}

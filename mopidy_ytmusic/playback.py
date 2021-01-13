@@ -5,7 +5,7 @@ from mopidy import backend, httpclient
 from mopidy_ytmusic import logger
 from youtube_dl import YoutubeDL
 
-class YoutubeMusicPlaybackProvider(backend.PlaybackProvider):
+class YTMusicPlaybackProvider(backend.PlaybackProvider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.last_id = None
