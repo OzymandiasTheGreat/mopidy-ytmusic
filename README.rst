@@ -57,7 +57,8 @@ Other configuration options are as follows:
 - :code:`playlist_item_limit` - Number of items to grab from playlists.  This is not exact.  Default: 100
 - :code:`subscribed_artist_limit` - Number of subscriptions to list. Default: 100. Set to 0 to disable subscription list.
 - :code:`enable_history` - Show Recently Played playlist. Default: yes
-- :code:`enable_like_songs` - Show Likes Songs playlist. Default: yes
+- :code:`enable_like_songs` - Show Liked Songs playlist. Default: yes
+- :code:`enable_mood_genre` - Show Mood & Genre playlists from YouTube Music's Explore directory. Default: yes
 - :code:`enable_scrobbling` - Mark tracks as played on YouTube Music after listening.  Default: yes
 - :code:`stream_preference` - Comma separated list of itags in the order of preference you want for stream.  Default: "141, 251, 140, 250, 249"
 

@@ -28,6 +28,7 @@ class Extension(ext.Extension):
         schema["subscribed_artist_limit"] = config.Integer(minimum=0, optional=True)
         schema["enable_history"] = config.Boolean(optional=True)
         schema["enable_liked_songs"] = config.Boolean(optional=True)
+        schema["enable_mood_genre"] = config.Boolean(optional=True)
         schema["enable_scrobbling"] = config.Boolean(optional=True)
         schema["stream_preference"] = config.List(optional=True)
         return schema

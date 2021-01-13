@@ -1,13 +1,14 @@
 from mopidy import backend
 from mopidy.models import Ref, Track, Album, Artist, SearchResult
 from mopidy_ytmusic import logger
+from ytmusicapi.parsers.utils import nav, get_continuations, CAROUSEL_TITLE, TITLE, TITLE_TEXT, NAVIGATION_BROWSE_ID, SINGLE_COLUMN_TAB, SECTION_LIST
+
 
 class YoutubeMusicLibraryProvider(backend.LibraryProvider):
     root_directory = Ref.directory(uri="ytmusic:root", name="YouTube Music")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ytbrowse = []
-        self.ytmoods = []
         self.TRACKS = {}
         self.ALBUMS = {}
         self.ARTISTS = {}
@@ -28,11 +29,10 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 if self.backend.subscribed_artist_limit:
                     dirs.append(Ref.directory(uri="ytmusic:subscriptions", name="Subscriptions"))
             dirs.append(Ref.directory(uri="ytmusic:watch", name="Similar to last played"))
+            if self.backend.mood_genre:
+                dirs.append(Ref.directory(uri="ytmusic:mood", name="Mood and Genre Playlists"))
             if self.backend._auto_playlist_refresh_rate:
-                dirs += [
-                    Ref.directory(uri="ytmusic:mood", name="Mood and Genre Playlists"),
-                    Ref.directory(uri="ytmusic:auto", name="Auto Playlists"),
-                ]
+                dirs.append(Ref.directory(uri="ytmusic:auto", name="Auto Playlists"))
             return(dirs)
         elif uri == "ytmusic:subscriptions" and self.backend.subscribed_artist_limit:
             try:
@@ -123,23 +123,47 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                         return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
                 logger.exception("YTMusic failed getting watch songs")
-        elif uri == "ytmusic:mood" and self.backend._auto_playlist_refresh_rate:
+        elif uri == "ytmusic:mood":
             try:
+                logger.debug('YTMusic loading mood/genre playlists')
+                moods = {}
+                response = self.backend.api._send_request('browse',{"browseId":"FEmusic_moods_and_genres"})
+                for sect in nav(response,SINGLE_COLUMN_TAB + SECTION_LIST):
+                    for cat in nav(sect,['gridRenderer','items']):
+                        title  = nav(cat,['musicNavigationButtonRenderer','buttonText','runs',0,'text']).strip()
+                        endpnt = nav(cat,['musicNavigationButtonRenderer','clickCommand','browseEndpoint','browseId'])
+                        params = nav(cat,['musicNavigationButtonRenderer','clickCommand','browseEndpoint','params'])
+                        moods[title] = {'name':title,'uri':'ytmusic:mood:'+params+':'+endpnt}
                 return [
-                    Ref.directory(uri=a['uri'], name=a['name'])
-                    for a in self.ytmoods
+                    Ref.directory(uri=moods[a]['uri'], name=moods[a]['name'])
+                    for a in sorted(moods.keys())
                 ]
             except Exception:
-                logger.exception('YTMusic failed getting mood/genre playlists')
-        elif uri.startswith("ytmusic:mood:") and self.backend._auto_playlist_refresh_rate:
+                logger.exception('YTMusic failed to load mood/genre playlists')
+        elif uri.startswith("ytmusic:mood:"):
             try:
-                for a in self.ytmoods:
-                    if a['uri'] == uri:
-                        ret = []
-                        for i in a['items']:
-                            ret.append(Ref.playlist(uri=i['uri'],name=i['name']))
-                            logger.debug("playlist: %s - %s",i['name'],i['uri'])
-                        return(ret)
+                ret = []
+                _, _, params, endpnt = uri.split(':')
+                response = self.backend.api._send_request('browse',{"browseId":endpnt,"params":params})
+                for sect in nav(response,SINGLE_COLUMN_TAB + SECTION_LIST):
+                    key = []
+                    if 'gridRenderer' in sect:
+                        key = ['gridRenderer','items']
+                    elif 'musicCarouselShelfRenderer' in sect:
+                        key = ['musicCarouselShelfRenderer','contents']
+                    elif 'musicImmersiveCarouselShelfRenderer' in sect:
+                        key = ['musicImmersiveCarouselShelfRenderer','contents']
+                    if len(key):
+                        for item in nav(sect,key):
+                            title = nav(item,['musicTwoRowItemRenderer']+TITLE_TEXT).strip()
+#                           if 'subtitle' in item['musicTwoRowItemRenderer']:
+#                               title += ' ('
+#                               for st in item['musicTwoRowItemRenderer']['subtitle']['runs']:
+#                                   title += st['text']
+#                               title += ')'
+                            brId  = nav(item,['musicTwoRowItemRenderer']+NAVIGATION_BROWSE_ID)
+                            ret.append(Ref.playlist(uri=f"ytmusic:playlist:{brId}",name=title))
+                return(ret)
             except Exception:
                 logger.exception('YTMusic failed getting mood/genre playlist "%s"',uri)
         elif uri == "ytmusic:auto" and self.backend._auto_playlist_refresh_rate:
