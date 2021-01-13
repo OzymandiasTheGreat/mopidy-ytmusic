@@ -52,26 +52,32 @@ streams and other premium content.
 
 Other configuration options are as follows:
 
-- :code:`auto_playlist_refresh` - time (in minutes) to refresh the Auto playlists.  Default: 30
+- :code:`auto_playlist_refresh` - time (in minutes) to refresh the Auto playlists.  Default: 30. Set to 0 to disable auto playlists.
 - :code:`youtube_player_refresh` - time (in minutes) to refresh the Youtube player url (used for decoding the signature).  Default: 15
 - :code:`playlist_item_limit` - Number of items to grab from playlists.  This is not exact.  Default: 100
+- :code:`subscribed_artist_limit` - Number of subscriptions to list. Default: 100. Set to 0 to disable subscription list.
+- :code:`enable_history` - Show Recently Played playlist. Default: yes
+- :code:`enable_like_songs` - Show Likes Songs playlist. Default: yes
+- :code:`enable_scrobbling` - Mark tracks as played on YouTube Music after listening.  Default: yes
 - :code:`stream_preference` - Comma separated list of itags in the order of preference you want for stream.  Default: "141, 251, 140, 250, 249"
 
 Info on YouTube Music streams:
 
-+------+-------+-------------+----------+
-| itag | Codec | Sample Rate | Bit Rate |
-+======+=======+=============+==========+
-| 141  | AAC   | 44.1kHz     | ~260kbps |
-+------+-------+-------------+----------+
-| 251  | Opus  | 48kHz       | ~150kbps |
-+------+-------+-------------+----------+
-| 140  | AAC   | 44.1kHz     | ~132kbps |
-+------+-------+-------------+----------+
-| 250  | Opus  | 48kHz       | ~80kbps  |
-+------+-------+-------------+----------+
-| 249  | Opus  | 48kHz       | ~64kbps  |
-+------+-------+-------------+----------+
++----------+-------+-------------+----------+
+| itag     | Codec | Sample Rate | Bit Rate |
++==========+=======+=============+==========+
+| 141 [*]_ | AAC   | 44.1kHz     | ~260kbps |
++----------+-------+-------------+----------+
+| 251      | Opus  | 48kHz       | ~150kbps |
++----------+-------+-------------+----------+
+| 140      | AAC   | 44.1kHz     | ~132kbps |
++----------+-------+-------------+----------+
+| 250      | Opus  | 48kHz       | ~80kbps  |
++----------+-------+-------------+----------+
+| 249      | Opus  | 48kHz       | ~64kbps  |
++----------+-------+-------------+----------+
+
+.. [*] Available to premium accounts only.
 
 Build for Local Install
 =======================

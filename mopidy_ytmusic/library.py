@@ -19,14 +19,27 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 dirs += [
                     Ref.directory(uri="ytmusic:artist", name="Artists"),
                     Ref.directory(uri="ytmusic:album", name="Albums"),
-                    Ref.directory(uri="ytmusic:liked", name="Liked Songs"),
-                    Ref.directory(uri="ytmusic:history", name="Recently Played"),
                 ]
-            dirs += [
-                Ref.directory(uri="ytmusic:watch", name="Similar to last played"),
-                Ref.directory(uri="ytmusic:auto", name="Auto Playlists"),
-            ]
+                if self.backend.liked_songs:
+                    dirs.append(Ref.directory(uri="ytmusic:liked", name="Liked Songs"))
+                if self.backend.history:
+                    dirs.append(Ref.directory(uri="ytmusic:history", name="Recently Played"))
+                if self.backend.subscribed_artist_limit:
+                    dirs.append(Ref.directory(uri="ytmusic:subscriptions", name="Subscriptions"))
+            dirs.append(Ref.directory(uri="ytmusic:watch", name="Similar to last played"))
+            if self.backend._auto_playlist_refresh_rate:
+                dirs.append(Ref.directory(uri="ytmusic:auto", name="Auto Playlists"))
             return(dirs)
+        elif uri == "ytmusic:subscriptions" and self.backend.subscribed_artist_limit:
+            try:
+                subs = self.backend.api.get_library_subscriptions(limit=self.backend.subscribed_artist_limit)
+                logger.info("YTMusic found %d artists in subscriptions", len(subs))
+                return [
+                    Ref.artist(uri=f"ytmusic:artist:{a['browseId']}", name=a["artist"])
+                    for a in subs
+                ]
+            except Exception:
+                logger.exception("YTMusic failed getting artists from subscriptions")
         elif uri == "ytmusic:artist":
             try:
                 library_artists = [
@@ -83,7 +96,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 logger.exception("YTMusic failed getting liked songs")
         elif uri == "ytmusic:history":
             try:
-                res = self.backend.api.get_history(limit=self.backend.playlist_item_limit)
+                res = self.backend.api.get_history()
                 tracks = self.playlistToTracks({'tracks': res})
                 logger.info("YTMusic found %d songs from recent history",len(res))
                 return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
@@ -106,7 +119,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                         return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
                 logger.exception("YTMusic failed getting watch songs")
-        elif uri == "ytmusic:auto":
+        elif uri == "ytmusic:auto" and self.backend._auto_playlist_refresh_rate:
             try:
                 return [
                     Ref.directory(uri=a['uri'], name=a['name'])
@@ -114,7 +127,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                 ]
             except Exception:
                 logger.exception('YTMusic failed getting auto playlists')
-        elif uri.startswith("ytmusic:auto:"):
+        elif uri.startswith("ytmusic:auto:") and self.backend._auto_playlist_refresh_rate:
             try:
                 for a in self.ytbrowse:
                     if a['uri'] == uri:

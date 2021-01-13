@@ -7,26 +7,29 @@ from mopidy_ytmusic import logger
 class YoutubeMusicScrobbleFE(pykka.ThreadingActor, core.CoreListener):
     def __init__(self, config, core):
         super().__init__()
+        self.config = config
+        self.scrobbling = config["ytmusic"]["enable_scrobbling"]
 
     def track_playback_ended(self, tl_track, time_position):
-        track = tl_track.track
+        if self.scrobbling:
+            track = tl_track.track
 
-        duration = track.length and track.length // 1000 or 0
-        time_position = time_position // 1000
+            duration = track.length and track.length // 1000 or 0
+            time_position = time_position // 1000
 
-        if time_position < duration // 2 and time_position < 120:
-            logger.debug(
-                "Track not played long enough too scrobble. (50% or 120s)"
+            if time_position < duration // 2 and time_position < 120:
+                logger.debug(
+                    "Track not played long enough too scrobble. (50% or 120s)"
+                )
+                return
+
+            bId = track.uri.split(":")[2]
+            logger.debug("Scrobbling: %s", bId)
+            listener.send(
+                YoutubeMusicScrobbleListener,
+                "scrobble_track",
+                bId=bId,
             )
-            return
-
-        bId = track.uri.split(":")[2]
-        logger.debug("Scrobbling: %s", bId)
-        listener.send(
-            YoutubeMusicScrobbleListener,
-            "scrobble_track",
-            bId=bId,
-        )
 
 
 class YoutubeMusicScrobbleListener(listener.Listener):

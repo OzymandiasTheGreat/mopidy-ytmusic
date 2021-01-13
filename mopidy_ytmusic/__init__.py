@@ -22,9 +22,13 @@ class Extension(ext.Extension):
     def get_config_schema(self):
         schema = super().get_config_schema()
         schema["auth_json"] = config.String(optional=True)
-        schema["auto_playlist_refresh"] = config.Integer(minimum=1, optional=True)
+        schema["auto_playlist_refresh"] = config.Integer(minimum=0, optional=True)
         schema["youtube_player_refresh"] = config.Integer(minimum=1, optional=True)
         schema["playlist_item_limit"] = config.Integer(minimum=1, optional=True)
+        schema["subscribed_artist_limit"] = config.Integer(minimum=0, optional=True)
+        schema["enable_history"] = config.Boolean(optional=True)
+        schema["enable_liked_songs"] = config.Boolean(optional=True)
+        schema["enable_scrobbling"] = config.Boolean(optional=True)
         schema["stream_preference"] = config.List(optional=True)
         return schema
 

@@ -33,6 +33,9 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
         self._youtube_player_refresh_timer = None
 
         self.playlist_item_limit = config["ytmusic"]["playlist_item_limit"]
+        self.subscribed_artist_limit = config["ytmusic"]["subscribed_artist_limit"]
+        self.history = config["ytmusic"]["enable_history"]
+        self.liked_songs = config["ytmusic"]["enable_liked_songs"]
         self.stream_preference = config["ytmusic"]["stream_preference"]
 
         self.api = None
@@ -50,10 +53,13 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
             self.api = YTMusic(self._ytmusicapi_auth_json)
         else:
             self.api = YTMusic()
-        self._auto_playlist_refresh_timer = RepeatingTimer(
-            self._refresh_auto_playlists, self._auto_playlist_refresh_rate
-        )
-        self._auto_playlist_refresh_timer.start()
+
+        if self._auto_playlist_refresh_rate:
+            self._auto_playlist_refresh_timer = RepeatingTimer(
+                self._refresh_auto_playlists, self._auto_playlist_refresh_rate
+            )
+            self._auto_playlist_refresh_timer.start()
+
         self._youtube_player_refresh_timer = RepeatingTimer(
             self._refresh_youtube_player, self._youtube_player_refresh_rate
         )
