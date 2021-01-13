@@ -7,6 +7,7 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ytbrowse = []
+        self.ytmoods = []
         self.TRACKS = {}
         self.ALBUMS = {}
         self.ARTISTS = {}
@@ -28,7 +29,10 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                     dirs.append(Ref.directory(uri="ytmusic:subscriptions", name="Subscriptions"))
             dirs.append(Ref.directory(uri="ytmusic:watch", name="Similar to last played"))
             if self.backend._auto_playlist_refresh_rate:
-                dirs.append(Ref.directory(uri="ytmusic:auto", name="Auto Playlists"))
+                dirs += [
+                    Ref.directory(uri="ytmusic:mood", name="Mood and Genre Playlists"),
+                    Ref.directory(uri="ytmusic:auto", name="Auto Playlists"),
+                ]
             return(dirs)
         elif uri == "ytmusic:subscriptions" and self.backend.subscribed_artist_limit:
             try:
@@ -119,6 +123,25 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                         return [ Ref.track(uri=t.uri, name=t.name) for t in tracks ]
             except Exception:
                 logger.exception("YTMusic failed getting watch songs")
+        elif uri == "ytmusic:mood" and self.backend._auto_playlist_refresh_rate:
+            try:
+                return [
+                    Ref.directory(uri=a['uri'], name=a['name'])
+                    for a in self.ytmoods
+                ]
+            except Exception:
+                logger.exception('YTMusic failed getting mood/genre playlists')
+        elif uri.startswith("ytmusic:mood:") and self.backend._auto_playlist_refresh_rate:
+            try:
+                for a in self.ytmoods:
+                    if a['uri'] == uri:
+                        ret = []
+                        for i in a['items']:
+                            ret.append(Ref.playlist(uri=i['uri'],name=i['name']))
+                            logger.debug("playlist: %s - %s",i['name'],i['uri'])
+                        return(ret)
+            except Exception:
+                logger.exception('YTMusic failed getting mood/genre playlist "%s"',uri)
         elif uri == "ytmusic:auto" and self.backend._auto_playlist_refresh_rate:
             try:
                 return [
@@ -135,13 +158,13 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
                         for i in a['items']:
                             if i['type'] == 'playlist':
                                 ret.append(Ref.playlist(uri=i['uri'],name=i['name']))
-                                logger.info("playlist: %s - %s",i['name'],i['uri'])
+                                logger.debug("playlist: %s - %s",i['name'],i['uri'])
                             elif i['type'] == 'artist':
                                 ret.append(Ref.artist(uri=i['uri'],name=i['name']))
-                                logger.info("artist: %s - %s",i['name'],i['uri'])
+                                logger.debug("artist: %s - %s",i['name'],i['uri'])
                             elif i['type'] == 'album':
                                 ret.append(Ref.album(uri=i['uri'],name=i['name']))
-                                logger.info("album: %s - %s",i['name'],i['uri'])
+                                logger.debug("album: %s - %s",i['name'],i['uri'])
                         return(ret)
             except Exception:
                 logger.exception('YTMusic failed getting auto playlist "%s"',uri)
@@ -303,7 +326,9 @@ class YoutubeMusicLibraryProvider(backend.LibraryProvider):
         ret = []
         if "tracks" in pls:
             for track in pls["tracks"]:
-                duration = (track['duration'] if 'duration' in track else track['length']).split(":")
+                duration = ['0','0']
+                if 'duration' in track or 'length' in track:
+                    duration = (track['duration'] if 'duration' in track else track['length']).split(":")
                 artists = []
                 if 'artists' in track:
                     for a in track['artists']:

@@ -52,7 +52,7 @@ streams and other premium content.
 
 Other configuration options are as follows:
 
-- :code:`auto_playlist_refresh` - time (in minutes) to refresh the Auto playlists.  Default: 30. Set to 0 to disable auto playlists.
+- :code:`auto_playlist_refresh` - time (in minutes) to refresh the Auto playlists.  Default: 60. Set to 0 to disable auto playlists.
 - :code:`youtube_player_refresh` - time (in minutes) to refresh the Youtube player url (used for decoding the signature).  Default: 15
 - :code:`playlist_item_limit` - Number of items to grab from playlists.  This is not exact.  Default: 100
 - :code:`subscribed_artist_limit` - Number of subscriptions to list. Default: 100. Set to 0 to disable subscription list.

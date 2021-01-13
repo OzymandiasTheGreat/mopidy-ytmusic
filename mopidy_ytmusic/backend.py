@@ -94,8 +94,30 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
     def _refresh_auto_playlists(self):
         t0 = time.time()
         self._get_auto_playlists()
+        self._get_mood_playlists()
         t = time.time() - t0
-        logger.info("Auto Playlists refreshed in %.2fs",t)
+        logger.info("Auto/Mood Playlists refreshed in %.2fs",t)
+
+    def _get_mood_playlists(self):
+        try:
+            logger.debug('YTMusic loading mood/genre playlists')
+            moods = {}
+            response = self.api._send_request('browse',{"browseId":"FEmusic_moods_and_genres"})
+            for sect in nav(response,SINGLE_COLUMN_TAB + SECTION_LIST):
+                for cat in nav(sect,['gridRenderer','items']):
+                    title  = nav(cat,['musicNavigationButtonRenderer','buttonText','runs',0,'text'])
+                    endpnt = nav(cat,['musicNavigationButtonRenderer','clickCommand','browseEndpoint','browseId'])
+                    params = nav(cat,['musicNavigationButtonRenderer','clickCommand','browseEndpoint','params'])
+                    resp2 = self.api._send_request('browse',{"browseId":endpnt,"params":params})
+                    pls = get_mood(resp2,title)
+                    moods[title] = {'name':title,'uri':'ytmusic:mood:'+params,'items':pls}
+        except Exception:
+            logger.exception('YTMusic failed to load mood/genre playlists')
+        self.library.ytmoods = []
+        logger.info('YTMusic loaded %d mood/genre playlists sections',len(moods))
+        for i in sorted(moods.keys()):
+            self.library.ytmoods.append(moods[i])
+        return(None)
 
     def _get_auto_playlists(self):
         try:
@@ -115,7 +137,7 @@ class YoutubeMusicBackend(pykka.ThreadingActor, backend.Backend, YoutubeMusicScr
             self.library.ytbrowse = browse
         except Exception:
             logger.exception('YTMusic failed to load auto playlists')
-        return(0)
+        return(None)
 
     def scrobble_track(self,bId):
         # Called through YoutubeMusicScrobbleListener
@@ -177,3 +199,28 @@ def parse_auto_playlists(res):
                 else:
                     browse[-1]['items'].append({'type':'album','uri':f"ytmusic:album:{brId}",'name':ititle+' ('+ctype+')'})
     return(browse)
+
+def get_mood(p,t):
+    ret = []
+    try:
+        for sect in nav(p,SINGLE_COLUMN_TAB + SECTION_LIST):
+            key = []
+            if 'gridRenderer' in sect:
+                key = ['gridRenderer','items']
+            elif 'musicCarouselShelfRenderer' in sect:
+                key = ['musicCarouselShelfRenderer','contents']
+            elif 'musicImmersiveCarouselShelfRenderer' in sect:
+                key = ['musicImmersiveCarouselShelfRenderer','contents']
+            if len(key):
+                for item in nav(sect,key):
+                    title = nav(item,['musicTwoRowItemRenderer']+TITLE_TEXT)
+    #               if 'subtitle' in item['musicTwoRowItemRenderer']:
+    #                   title += ' ('
+    #                   for st in item['musicTwoRowItemRenderer']['subtitle']['runs']:
+    #                       title += st['text']
+    #                   title += ')'
+                    brId  = nav(item,['musicTwoRowItemRenderer']+NAVIGATION_BROWSE_ID)
+                    ret.append({'uri':f"ytmusic:playlist:{brId}",'name':title})
+    except Exception:
+        logger.exception('Failed to load mood/genre playlist: '+t)
+    return(ret)
