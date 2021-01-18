@@ -1,6 +1,7 @@
 # Stolen directly from mopidy-gmusic
 from threading import Event, Thread
 
+
 class RepeatingTimer(Thread):
     def __init__(self, method, interval=0):
         Thread.__init__(self)

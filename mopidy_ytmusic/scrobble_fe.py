@@ -4,6 +4,7 @@ import pykka
 from mopidy import core, listener
 from mopidy_ytmusic import logger
 
+
 class YTMusicScrobbleFE(pykka.ThreadingActor, core.CoreListener):
     def __init__(self, config, core):
         super().__init__()
