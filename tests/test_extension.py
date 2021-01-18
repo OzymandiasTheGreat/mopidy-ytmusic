@@ -21,7 +21,7 @@ class ExtensionTest(unittest.TestCase):
         config["enable_mood_genre"] = True
         config["enable_scrobbling"] = False
         config["stream_preference"] = ["141", "251", "140", "250", "249"]
-        return {"youtubemusic": config, "proxy": {}}
+        return {"ytmusic": config, "proxy": {}}
 
     def test_get_default_config(self):
         ext = Extension()
@@ -62,12 +62,12 @@ class ExtensionTest(unittest.TestCase):
         ext.setup(registry)
 
         assert (
-            mock.call("backend", backend_lib.YoutubeMusicBackend)
+            mock.call("backend", backend_lib.YTMusicBackend)
             in registry.add.mock_calls
         )
 
         assert (
-            mock.call("frontend", scrobble_fe.YoutubeMusicScrobbleFE)
+            mock.call("frontend", scrobble_fe.YTMusicScrobbleFE)
             in registry.add.mock_calls
         )
 

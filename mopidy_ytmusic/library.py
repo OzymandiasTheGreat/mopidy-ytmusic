@@ -21,6 +21,8 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         self.ARTISTS = {}
 
     def browse(self, uri):
+        if not uri:
+            return []
         logger.info('YTMusic browsing uri "%s"', uri)
         if uri == "ytmusic:root":
             dirs = []
@@ -265,11 +267,11 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                             title = nav(
                                 item, ["musicTwoRowItemRenderer"] + TITLE_TEXT
                             ).strip()
-                            #                           if 'subtitle' in item['musicTwoRowItemRenderer']:
-                            #                               title += ' ('
-                            #                               for st in item['musicTwoRowItemRenderer']['subtitle']['runs']:
-                            #                                   title += st['text']
-                            #                               title += ')'
+#                           if 'subtitle' in item['musicTwoRowItemRenderer']:
+#                               title += ' ('
+#                               for st in item['musicTwoRowItemRenderer']['subtitle']['runs']:
+#                                   title += st['text']
+#                               title += ')'
                             brId = nav(
                                 item,
                                 ["musicTwoRowItemRenderer"]
