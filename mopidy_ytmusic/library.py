@@ -843,12 +843,11 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 ):
                     continue
                 try:
-                    album = self.backend.api.get_album(result["browseId"])
                     if result["browseId"] not in self.ALBUMS:
                         date = result["year"]
                         self.ALBUMS[result["browseId"]] = Album(
                             uri=f"ytmusic:album:{result['browseId']}",
-                            name=album["title"],
+                            name=result["title"],
                             artists=[
                                 Artist(
                                     uri="",
@@ -857,9 +856,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                                     musicbrainz_id="",
                                 )
                             ],
-                            num_tracks=int(album["trackCount"])
-                            if str(album["trackCount"]).isnumeric()
-                            else None,
+                            num_tracks=None,
                             num_discs=None,
                             date=date,
                             musicbrainz_id="",
