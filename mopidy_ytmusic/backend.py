@@ -35,36 +35,53 @@ def parse_uri(uri):
 
 
 def playlistToTracks(pls):
-    if ("tracks" in pls):
+    if "tracks" in pls:
         for track in pls["tracks"]:
-            artists = [Artist(
-                uri=f"ytm:artist?id={a['id']}",
-                name=a["name"],
-                sortname=a["name"],
-                musicbrainz_id="",
-            ) for a in track["artists"]]
-            TRACKS[track["videoId"]] = Track(
-                uri=f"ytm:video?id={track['videoId']}",
-                name=track["title"],
-                artists=artists,
-                album=track["album"] and Album(
-                    uri=f"ytm:album?id={track['album']['id']}",
+            duration = (track['duration'] if 'duration' in track else track['length']).split(":")
+
+            if 'artists' in track:
+                artists = [Artist(
+                    uri=f"ytm:artist?id={a['id']}&upload=false",
+                    name=a["name"],
+                    sortname=a["name"],
+                    musicbrainz_id="",
+                ) for a in track["artists"]]
+            elif 'byline' in track:
+                artists = [Artist(
+                    name=track["byline"],
+                    sortname=track["byline"],
+                    musicbrainz_id="",
+                )]
+            else:
+                artists = None
+
+            if 'album' in track and track['album'] is not None:
+                album = Album(
+                    uri=f"ytm:album?id={track['album']['id']}&upload=false",
                     name=track["album"]["name"],
                     artists=artists,
                     num_tracks=None,
                     num_discs=None,
                     date="1999",
                     musicbrainz_id="",
-                ),
+                )
+            else:
+                album = None
+
+            TRACKS[track["videoId"]] = Track(
+                uri=f"ytm:video?id={track['videoId']}",
+                name=track["title"],
+                artists=artists,
+                album=album,
                 composers=[],
                 performers=[],
                 genre="",
                 track_no=None,
                 disc_no=None,
                 date="1999",
-                length=None,
+                length=(int(duration[0]) * 60 * 1000) + (int(duration[1]) * 1000),
                 bitrate=0,
-                comment="0",
+                comment="",
                 musicbrainz_id="",
                 last_modified=None,
             )
@@ -392,6 +409,10 @@ class YTMusicBackend(pykka.ThreadingActor, backend.Backend):
 
 
 class YouTubePlaybackProvider(backend.PlaybackProvider):
+    def __init__(self, audio, backend):
+        super().__init__(audio, backend)
+        self.last_id = None
+
     def translate_uri(self, uri):
         logger.info('YTMusic PlaybackProvider.translate_uri "%s"', uri)
 
@@ -400,6 +421,7 @@ class YouTubePlaybackProvider(backend.PlaybackProvider):
 
         try:
             id_ = parse_qs(urlparse(uri).query)["id"][0]
+            self.last_id = id_
             return get_video(id_)
         except Exception as e:
             logger.error('translate_uri error "%s"', e)
@@ -416,6 +438,7 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
                 Ref.directory(uri="ytm:artist", name="Artists"),
                 Ref.directory(uri="ytm:album", name="Albums"),
                 Ref.directory(uri="ytm:liked", name="Liked Songs"),
+                Ref.directory(uri="ytm:watch", name="Similar to last played"),
                 Ref.directory(uri="ytm:history", name="Recently Played"),
             ]
         elif uri == "ytm:artist":
@@ -461,14 +484,28 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
         elif uri == "ytm:liked":
             try:
                 res = API.get_liked_songs(limit=100)
+                logger.info("YTMusic found %d liked songs", len(res["tracks"]))
                 playlistToTracks(res)
                 return [
                     Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
                     for t in ("tracks" in res and res["tracks"]) or []
                 ]
-                logger.info("YTMusic found %d liked songs", len(res["tracks"]))
             except Exception:
                 logger.exception("YTMusic failed getting liked songs")
+        elif uri == "ytm:watch":
+            try:
+                playback = self.backend.playback
+                if playback.last_id is not None:
+                    track_id = playback.last_id
+                    res = API.get_watch_playlist(track_id, limit=100)
+                    logger.info("YTMusic found %d watch songs for \"%s\"", len(res), track_id)
+                    playlistToTracks({'tracks': res})
+                    return [
+                        Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
+                        for t in res if t['videoId'] != track_id
+                    ]
+            except Exception:
+                logger.exception("YTMusic failed getting watch songs")
         elif uri == "ytm:history":
             try:
                 res = API.get_history()
@@ -496,12 +533,12 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
             # else:
             try:
                 res = API.get_artist(id_)
+                logger.info("YTMusic found %d songs for artist \"%s\" in library", len(res["songs"]), res["name"])
                 artistToTracks(res)
                 return [
                     Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
                     for t in ("songs" in res and "results" in res["songs"] and res["songs"]["results"]) or []
                 ]
-                logger.info("YTMusic found %d songs for artist \"%s\" in library", len(res["songs"]), res["name"])
             except Exception:
                 logger.exception("YTMusic failed getting tracks for artist \"%s\"", id_)
         elif uri.startswith("ytm:album?"):
@@ -520,12 +557,12 @@ class YouTubeLibraryProvider(backend.LibraryProvider):
             # else:
             try:
                 res = API.get_album(id_)
+                logger.info("YTMusic found %d songs for album \"%s\" in library", len(res["tracks"]), res["title"])
                 albumToTracks(res, id_)
                 return [
                     Ref.track(uri=f"ytm:video?id={t['videoId']}", name=t["title"])
                     for t in ("tracks" in res and res["tracks"]) or []
                 ]
-                logger.info("YTMusic found %d songs for album \"%s\" in library", len(res["tracks"]), res["title"])
             except Exception:
                 logger.exception("YTMusic failed getting tracks for album \"%s\"", id_)
         return []
@@ -728,7 +765,7 @@ class YouTubePlaylistsProvider(backend.PlaylistsProvider):
                         sortname=a["name"],
                         musicbrainz_id="",
                     ) for a in track["artists"]]
-                    if track["album"]:
+                    if 'album' in track and track['album'] is not None:
                         album = Album(
                             uri=f"ytm:album?id={track['album']['id']}&upload=false",
                             name=track["album"]["name"],
