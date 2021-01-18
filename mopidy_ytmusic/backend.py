@@ -57,10 +57,14 @@ class YTMusicBackend(
         self.mood_genre = config["ytmusic"]["enable_mood_genre"]
         self.stream_preference = config["ytmusic"]["stream_preference"]
 
-        self.api = None
         if config["ytmusic"]["auth_json"]:
             self._ytmusicapi_auth_json = config["ytmusic"]["auth_json"]
             self.auth = True
+
+        if self.auth:
+            self.api = YTMusic(self._ytmusicapi_auth_json)
+        else:
+            self.api = YTMusic()
 
         self.playback = YTMusicPlaybackProvider(audio=audio, backend=self)
         self.library = YTMusicLibraryProvider(backend=self)
@@ -68,11 +72,6 @@ class YTMusicBackend(
             self.playlists = YTMusicPlaylistsProvider(backend=self)
 
     def on_start(self):
-        if self.auth:
-            self.api = YTMusic(self._ytmusicapi_auth_json)
-        else:
-            self.api = YTMusic()
-
         if self._auto_playlist_refresh_rate:
             self._auto_playlist_refresh_timer = RepeatingTimer(
                 self._refresh_auto_playlists, self._auto_playlist_refresh_rate
