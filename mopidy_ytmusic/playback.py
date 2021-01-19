@@ -54,7 +54,7 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
                     tags[stream[0]] = {
                         "url": stream[2],
                         "audioQuality": "ITAG_" + stream[0],
-                        "averageBitrate": int(stream[1]),
+                        "bitrate": int(stream[1]),
                     }
             for i, p in enumerate(self.backend.stream_preference, start=1):
                 if str(p) in tags:
@@ -79,14 +79,14 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
                         break
                     if (
                         stream["mimeType"].startswith("audio/mp4")
-                        and stream["averageBitrate"] > bitrate
+                        and stream["bitrate"] > bitrate
                     ):
-                        bitrate = stream["averageBitrate"]
+                        bitrate = stream["bitrate"]
                         playstr = stream
                     elif stream["mimeType"].startswith("audio"):
-                        crap[stream["averageBitrate"]] = stream
+                        crap[stream["bitrate"]] = stream
                     else:
-                        worse[stream["averageBitrate"]] = stream
+                        worse[stream["bitrate"]] = stream
                 if playstr is None:
                     # sigh.
                     if len(crap):
@@ -122,9 +122,9 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
                 logger.error("Unable to get URL from stream for %s", bId)
                 return None
             logger.info(
-                "Found %s stream with %d ABR for %s",
+                "Found %s stream with %d bitrate for %s",
                 playstr["audioQuality"],
-                playstr["averageBitrate"],
+                playstr["bitrate"],
                 bId,
             )
         if url is not None:
