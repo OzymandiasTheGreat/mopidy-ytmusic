@@ -729,6 +729,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         ret = []
         date = f"{album['releaseDate']['year']}"
         artists = []
+        artistname = ''
         for artist in album["artist"]:
             if artist["id"] not in self.ARTISTS:
                 self.ARTISTS[artist["id"]] = Artist(
@@ -738,6 +739,9 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     musicbrainz_id="",
                 )
             artists.append(self.ARTISTS[artist["id"]])
+            artistname = artist["name"]
+            # Break here to only collect the first artist.
+            break
         if bId not in self.ALBUMS:
             self.ALBUMS[bId] = Album(
                 uri=f"ytmusic:album:{bId}",
@@ -752,27 +756,52 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             )
         for song in album["tracks"]:
             if song["videoId"] not in self.TRACKS:
-                self.TRACKS[song["videoId"]] = Track(
-                    uri=f"ytmusic:track:{song['videoId']}",
-                    name=song["title"],
-                    artists=artists,
-                    album=self.ALBUMS[bId],
-                    composers=[],
-                    performers=[],
-                    genre="",
-                    track_no=int(song["index"])
-                    if str(song["index"]).isnumeric()
-                    else None,
-                    disc_no=None,
-                    date=date,
-                    length=int(song["lengthMs"])
-                    if str(song["lengthMs"]).isnumeric()
-                    else None,
-                    bitrate=0,
-                    comment="",
-                    musicbrainz_id="",
-                    last_modified=None,
-                )
+                # Annoying workaround for Various Artists
+                if song['artists'] == artistname:
+                    self.TRACKS[song["videoId"]] = Track(
+                        uri=f"ytmusic:track:{song['videoId']}",
+                        name=song["title"],
+                        artists=artists,
+                        album=self.ALBUMS[bId],
+                        composers=[],
+                        performers=[],
+                        genre="",
+                        track_no=int(song["index"])
+                        if str(song["index"]).isnumeric()
+                        else None,
+                        disc_no=None,
+                        date=date,
+                        length=int(song["lengthMs"])
+                        if str(song["lengthMs"]).isnumeric()
+                        else None,
+                        bitrate=0,
+                        comment="",
+                        musicbrainz_id="",
+                        last_modified=None,
+                    )
+                else:
+                    self.TRACKS[song["videoId"]] = Track(
+                        uri=f"ytmusic:track:{song['videoId']}",
+                        name=song["title"],
+                        artists=[Artist(name=song["artists"])],
+                        album=self.ALBUMS[bId],
+                        composers=[],
+                        performers=[],
+                        genre="",
+                        track_no=int(song["index"])
+                        if str(song["index"]).isnumeric()
+                        else None,
+                        disc_no=None,
+                        date=date,
+                        length=int(song["lengthMs"])
+                        if str(song["lengthMs"]).isnumeric()
+                        else None,
+                        bitrate=0,
+                        comment="",
+                        musicbrainz_id="",
+                        last_modified=None,
+                    )
+
             ret.append(self.TRACKS[song["videoId"]])
         return ret
 
