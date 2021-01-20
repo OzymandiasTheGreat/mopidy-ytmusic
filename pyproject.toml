@@ -2,7 +2,6 @@
 target-version = ["py37", "py38"]
 line-length = 80
 
-
 [tool.isort]
 multi_line_output = 3
 include_trailing_comma = true
@@ -22,13 +21,14 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = "^3.7"
 Mopidy = "^3.0.2"
-youtube_dl = "^2020.12.9"
-ytmusicapi = "^0.11.0"
+youtube_dl = "^2021.1.1"
+ytmusicapi = "^0.13.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.4"
 setuptools = "^51.0.0"
 Sphinx = "^3.3.1"
+dephell = "^0.8.0"
 
 [tool.poetry.plugins."mopidy.ext"]
 ytmusic = "mopidy_ytmusic:Extension"
@@ -36,3 +36,10 @@ ytmusic = "mopidy_ytmusic:Extension"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.plugins."mopidy.ext"]
+ytmusic = "mopidy_ytmusic:Extension"
+
+[tool.dephell.main]
+from = {format = "poetry", path = "pyproject.toml"}
+to = {format = "setuppy", path = "setup.py"}
