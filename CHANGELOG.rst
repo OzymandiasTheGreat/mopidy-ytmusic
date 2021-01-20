@@ -2,6 +2,21 @@
 Changelog
 *********
 
+v0.2.0
+========================================
+
+- Updated to only use Youtube-DL to decode the url's signature to improve speed (Youtube-DL has a lot of overhead). This also means direct access to premium stuff without having to setup authentication for YDL as well.
+- Added stream quality preferences.
+- Added scrobbling to YouTube Music so that play history would be updated.
+- Used mopidy-gmusic code to handle timer events, and proper scrobbling.
+- Split code into individual source files per class. library.py is still huge.
+- Added auto playlists / mood & genre playlists / subscriptions to Library Browser.
+- Added options for more stuff.
+- Added support for unauthenticated access to YouTube Music.
+- changed "ytm" uri scheme name to "ytmusic" for better legibility.
+- also changed uris from HTTP GET style to just colon separated to be more like mopidy-gmusic and so it would interact with existing frontends easier.
+- used dephell to generate setup.py from pyproject.toml just so github could parse dependencies.
+
 
 v0.1.2
 ========================================
