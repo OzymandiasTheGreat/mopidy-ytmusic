@@ -75,6 +75,7 @@ class YTMusicBackend(
         if self._auto_playlist_refresh_rate:
             self._auto_playlist_refresh_timer = RepeatingTimer(
                 self._refresh_auto_playlists, self._auto_playlist_refresh_rate
+
             )
             self._auto_playlist_refresh_timer.start()
 
