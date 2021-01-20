@@ -26,11 +26,59 @@ Before starting Mopidy, you must add configuration for
 Mopidy-YTMusic to your Mopidy configuration file::
 
     [ytmusic]
-    auth_json = ./auth.json
+    enabled = true
 
-To acquire auth.json file run `mopidy ytmusic setup` and follow instructions
-in the terminal.
+By default Mopidy-YTMusic will connect to YouTube Music as a guest account.  This
+has limited options.  If you would like to connect to YouTube Music with your
+account (free or premium) you'll need to generate an auth.json file and configure
+Mopidy-YTMusic to use it.
 
+To create an auth.json file run :code:`mopidy ytmusic setup` and follow instructions
+in the terminal. When you're done it will tell you what config options you need
+to add to your Mopidy configuration file.
+
+Authenticated users have access to their listening history, likes,
+playlists and uploaded music.  Premium users have access to high quality audio
+streams and other premium content. 
+
+Other configuration options are as follows:
+
+- :code:`auto_playlist_refresh` - time (in minutes) to refresh the Auto playlists.  Default: 60. Set to 0 to disable auto playlists.
+- :code:`youtube_player_refresh` - time (in minutes) to refresh the Youtube player url (used for decoding the signature).  Default: 15
+- :code:`playlist_item_limit` - Number of items to grab from playlists.  This is not exact.  Default: 100
+- :code:`subscribed_artist_limit` - Number of subscriptions to list. Default: 100. Set to 0 to disable subscription list.
+- :code:`enable_history` - Show Recently Played playlist. Default: yes
+- :code:`enable_like_songs` - Show Liked Songs playlist. Default: yes
+- :code:`enable_mood_genre` - Show Mood & Genre playlists from YouTube Music's Explore directory. Default: yes
+- :code:`enable_scrobbling` - Mark tracks as played on YouTube Music after listening.  Default: yes
+- :code:`stream_preference` - Comma separated list of itags in the order of preference you want for stream.  Default: "141, 251, 140, 250, 249"
+
+Info on YouTube Music streams:
+
++----------+-------+-------------+----------+
+| itag     | Codec | Sample Rate | Bit Rate |
++==========+=======+=============+==========+
+| 141 [*]_ | AAC   | 44.1kHz     | ~260kbps |
++----------+-------+-------------+----------+
+| 251      | Opus  | 48kHz       | ~150kbps |
++----------+-------+-------------+----------+
+| 140      | AAC   | 44.1kHz     | ~132kbps |
++----------+-------+-------------+----------+
+| 250      | Opus  | 48kHz       | ~80kbps  |
++----------+-------+-------------+----------+
+| 249      | Opus  | 48kHz       | ~64kbps  |
++----------+-------+-------------+----------+
+
+.. [*] Available to premium accounts only.
+
+Build for Local Install
+=======================
+
+1. Install `poetry <https://python-poetry.org/docs/#installation>`
+2. Run :code:`poetry build` to create the build tarball
+3. The :code:`dist/Mopidy-YTMusic-x.x.x.tar.gz` file is what you'll use to install.
+4. With pip: :code:`python3 -m pip install dist/Mopidy-YTMusic-x.x.x.tar.gz` to install or reinstall over an existing version.
+5. Do configuration stuff if you haven't already.  
 
 Project resources
 =================
