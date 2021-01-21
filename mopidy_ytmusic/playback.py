@@ -20,7 +20,7 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
         self.YoutubeIE = self.YoutubeDL.get_info_extractor("Youtube")
 
     def translate_uri(self, uri):
-        logger.info('YTMusic PlaybackProvider.translate_uri "%s"', uri)
+        logger.debug('YTMusic PlaybackProvider.translate_uri "%s"', uri)
 
         if "ytmusic:track:" not in uri:
             return None
@@ -121,8 +121,8 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
             else:
                 logger.error("Unable to get URL from stream for %s", bId)
                 return None
-            logger.info(
-                "Found %s stream with %d bitrate for %s",
+            logger.debug(
+                "YTMusic Found %s stream with %d bitrate for %s",
                 playstr["audioQuality"],
                 playstr["bitrate"],
                 bId,

@@ -23,7 +23,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
     def browse(self, uri):
         if not uri:
             return []
-        logger.info('YTMusic browsing uri "%s"', uri)
+        logger.debug('YTMusic browsing uri "%s"', uri)
         if uri == "ytmusic:root":
             dirs = []
             if self.backend.auth:
@@ -71,7 +71,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 subs = self.backend.api.get_library_subscriptions(
                     limit=self.backend.subscribed_artist_limit
                 )
-                logger.info(
+                logger.debug(
                     "YTMusic found %d artists in subscriptions", len(subs)
                 )
                 return [
@@ -92,7 +92,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     )
                     for a in self.backend.api.get_library_artists(limit=100)
                 ]
-                logger.info(
+                logger.debug(
                     "YTMusic found %d artists in library", len(library_artists)
                 )
             except Exception:
@@ -109,7 +109,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                             limit=100
                         )
                     ]
-                    logger.info(
+                    logger.debug(
                         "YTMusic found %d uploaded artists", len(upload_artists)
                     )
                 except Exception:
@@ -126,7 +126,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     )
                     for a in self.backend.api.get_library_albums(limit=100)
                 ]
-                logger.info(
+                logger.debug(
                     "YTMusic found %d albums in library", len(library_albums)
                 )
             except Exception:
@@ -143,7 +143,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                             limit=100
                         )
                     ]
-                    logger.info(
+                    logger.debug(
                         "YTMusic found %d uploaded albums", len(upload_albums)
                     )
                 except Exception:
@@ -158,7 +158,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     limit=self.backend.playlist_item_limit
                 )
                 tracks = self.playlistToTracks(res)
-                logger.info("YTMusic found %d liked songs", len(res["tracks"]))
+                logger.debug("YTMusic found %d liked songs", len(res["tracks"]))
                 return [Ref.track(uri=t.uri, name=t.name) for t in tracks]
             except Exception:
                 logger.exception("YTMusic failed getting liked songs")
@@ -166,7 +166,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             try:
                 res = self.backend.api.get_history()
                 tracks = self.playlistToTracks({"tracks": res})
-                logger.info(
+                logger.debug(
                     "YTMusic found %d songs from recent history", len(res)
                 )
                 return [Ref.track(uri=t.uri, name=t.name) for t in tracks]
@@ -185,7 +185,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                         track_id, limit=self.backend.playlist_item_limit
                     )
                     if "tracks" in res:
-                        logger.info(
+                        logger.debug(
                             'YTMusic found %d watch songs for "%s"',
                             len(res["tracks"]),
                             track_id,
@@ -336,7 +336,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 try:
                     res = self.backend.api.get_library_upload_artist(bId)
                     tracks = self.uploadArtistToTracks(res)
-                    logger.info(
+                    logger.debug(
                         'YTMusic found %d songs for uploaded artist "%s"',
                         len(res),
                         res[0]["artist"]["name"],
@@ -351,7 +351,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 try:
                     res = self.backend.api.get_artist(bId)
                     tracks = self.artistToTracks(res)
-                    logger.info(
+                    logger.debug(
                         'YTMusic found %d songs for artist "%s" in library',
                         len(res["songs"]),
                         res["name"],
@@ -367,7 +367,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 try:
                     res = self.backend.api.get_library_upload_album(bId)
                     tracks = self.uploadAlbumToTracks(res, bId)
-                    logger.info(
+                    logger.debug(
                         'YTMusic found %d songs for uploaded album "%s"',
                         len(res["tracks"]),
                         res["title"],
@@ -382,7 +382,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 try:
                     res = self.backend.api.get_album(bId)
                     tracks = self.albumToTracks(res, bId)
-                    logger.info(
+                    logger.debug(
                         'YTMusic found %d songs for album "%s" in library',
                         len(res["tracks"]),
                         res["title"],
@@ -487,7 +487,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             images = []
             # Not handling updloaded stuff just yet.
             if len(uri.split(":")) == 3:
-                logger.info("YTMusic getting images for %s", uri)
+                logger.debug("YTMusic getting images for %s", uri)
                 _, func, bId = uri.split(":")
                 if func == "artist" or func == "album":
                     if func == "artist":
@@ -529,7 +529,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
 
     def search(self, query=None, uris=None, exact=False):
         results = []
-        logger.info("YTMusic searching for %s", query)
+        logger.debug("YTMusic searching for %s", query)
         if "any" in query:
             try:
                 res = self.backend.api.search(
@@ -588,7 +588,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     " ".join(query["album"]),
                 )
         else:
-            logger.info(
+            logger.debug(
                 'YTMusic skipping search, unsupported field types "%s"',
                 " ".join(query.keys()),
             )
@@ -720,7 +720,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 limit=self.backend.playlist_item_limit,
             )
             tracks = self.playlistToTracks(res)
-            logger.info(
+            logger.debug(
                 "YTMusic found %d tracks for %s", len(tracks), artist["name"]
             )
             return tracks
@@ -1033,7 +1033,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         for track in tracks:
             bId, _ = parse_uri(track.uri)
             self.TRACKS[bId] = track
-        logger.info(
+        logger.debug(
             "YTMusic search returned %d results",
             len(tracks) + len(sartists) + len(salbums),
         )
