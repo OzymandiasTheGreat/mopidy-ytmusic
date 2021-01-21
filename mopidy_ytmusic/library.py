@@ -1,5 +1,5 @@
 from mopidy import backend
-from mopidy.models import Ref, Track, Album, Artist, SearchResult
+from mopidy.models import Ref, Track, Album, Artist, SearchResult, Image
 from mopidy_ytmusic import logger
 from ytmusicapi.parsers.utils import (
     nav,
@@ -267,11 +267,11 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                             title = nav(
                                 item, ["musicTwoRowItemRenderer"] + TITLE_TEXT
                             ).strip()
-#                           if 'subtitle' in item['musicTwoRowItemRenderer']:
-#                               title += ' ('
-#                               for st in item['musicTwoRowItemRenderer']['subtitle']['runs']:
-#                                   title += st['text']
-#                               title += ')'
+                            #                           if 'subtitle' in item['musicTwoRowItemRenderer']:
+                            #                               title += ' ('
+                            #                               for st in item['musicTwoRowItemRenderer']['subtitle']['runs']:
+                            #                                   title += st['text']
+                            #                               title += ')'
                             brId = nav(
                                 item,
                                 ["musicTwoRowItemRenderer"]
@@ -479,6 +479,52 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         #         ret.add(a["title"])
         #     for a in library:
         #         ret.add(a["title"])
+        return ret
+
+    def get_images(self, uris):
+        ret = {}
+        for uri in uris:
+            images = []
+            # Not handling updloaded stuff just yet.
+            if len(uri.split(":")) == 3:
+                logger.info("YTMusic getting images for %s", uri)
+                _, func, bId = uri.split(":")
+                if func == "artist" or func == "album":
+                    if func == "artist":
+                        data = self.backend.api.get_artist(bId)
+                    else:
+                        data = self.backend.api.get_album(bId)
+                    if "thumbnails" in data:
+                        for th in data["thumbnails"]:
+                            if "url" in th:
+                                images.append(
+                                    Image(
+                                        uri=th["url"],
+                                        width=th["width"],
+                                        height=th["height"],
+                                    )
+                                )
+                if func == "track":
+                    if (
+                        bId in self.TRACKS
+                        and self.TRACKS[bId].album is not None
+                        and self.TRACKS[bId].album.uri is not None
+                    ):
+                        _, _, album = self.TRACKS[bId].album.uri.split(":")
+                        data = self.backend.api.get_album(album)
+                        if "thumbnails" in data:
+                            for th in data["thumbnails"]:
+                                if "url" in th:
+                                    images.append(
+                                        Image(
+                                            uri=th["url"],
+                                            width=th["width"],
+                                            height=th["height"],
+                                        )
+                                    )
+            # Send the higher res images first
+            images.reverse()
+            ret[uri] = images
         return ret
 
     def search(self, query=None, uris=None, exact=False):
@@ -729,7 +775,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         ret = []
         date = f"{album['releaseDate']['year']}"
         artists = []
-        artistname = ''
+        artistname = ""
         for artist in album["artist"]:
             if artist["id"] not in self.ARTISTS:
                 self.ARTISTS[artist["id"]] = Artist(
@@ -757,10 +803,10 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         for song in album["tracks"]:
             if song["videoId"] not in self.TRACKS:
                 # Annoying workaround for Various Artists
-                if song['artists'] == artistname:
+                if song["artists"] == artistname:
                     songartists = artists
                 else:
-                    songartists = [Artist(name=song['artists'])]
+                    songartists = [Artist(name=song["artists"])]
                 self.TRACKS[song["videoId"]] = Track(
                     uri=f"ytmusic:track:{song['videoId']}",
                     name=song["title"],
