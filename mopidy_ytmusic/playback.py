@@ -121,7 +121,7 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
             else:
                 logger.error("Unable to get URL from stream for %s", bId)
                 return None
-            logger.debug(
+            logger.info(
                 "YTMusic Found %s stream with %d bitrate for %s",
                 playstr["audioQuality"],
                 playstr["bitrate"],
@@ -129,5 +129,6 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
             )
         if url is not None:
             # Return the decoded youtube url to mopidy for playback.
+            logger.debug("YTMusic found %s", url)
             return url
         return None

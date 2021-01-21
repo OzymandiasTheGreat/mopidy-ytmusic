@@ -107,7 +107,7 @@ class YTMusicBackend(
         m = re.search(r'jsUrl"\s*:\s*"([^"]+)"', response.text)
         if m:
             url = m.group(1)
-            logger.debug("YTMusic updated player URL to %s", url)
+            logger.info("YTMusic updated player URL to %s", url)
             return url
         else:
             logger.error("YTMusic unable to extract player URL.")
@@ -117,7 +117,7 @@ class YTMusicBackend(
         t0 = time.time()
         self._get_auto_playlists()
         t = time.time() - t0
-        logger.debug("YTMusic Auto Playlists refreshed in %.2fs", t)
+        logger.info("YTMusic Auto Playlists refreshed in %.2fs", t)
 
     def _get_auto_playlists(self):
         try:
@@ -143,7 +143,7 @@ class YTMusicBackend(
             for i in range(len(browse) - 1, 0, -1):
                 if len(browse[i]["items"]) == 0:
                     browse.pop(i)
-            logger.debug(
+            logger.info(
                 "YTMusic loaded %d auto playlists sections", len(browse)
             )
             self.library.ytbrowse = browse
