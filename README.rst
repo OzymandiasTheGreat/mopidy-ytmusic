@@ -52,6 +52,7 @@ Other configuration options are as follows:
 - :code:`enable_mood_genre` - Show Mood & Genre playlists from YouTube Music's Explore directory. Default: yes
 - :code:`enable_scrobbling` - Mark tracks as played on YouTube Music after listening.  Default: yes
 - :code:`stream_preference` - Comma separated list of itags in the order of preference you want for stream.  Default: "141, 251, 140, 250, 249"
+- :code:`verify_track_url` - Verify that track url is valid before sending to mopidy. Default: yes.  There should be no need to set this to no.
 
 Info on YouTube Music streams:
 

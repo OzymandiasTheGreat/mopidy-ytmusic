@@ -56,6 +56,7 @@ class YTMusicBackend(
         self.liked_songs = config["ytmusic"]["enable_liked_songs"]
         self.mood_genre = config["ytmusic"]["enable_mood_genre"]
         self.stream_preference = config["ytmusic"]["stream_preference"]
+        self.verify_track_url = config["ytmusic"]["verify_track_url"]
 
         if config["ytmusic"]["auth_json"]:
             self._ytmusicapi_auth_json = config["ytmusic"]["auth_json"]

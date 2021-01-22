@@ -128,7 +128,19 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
                 bId,
             )
         if url is not None:
-            # Return the decoded youtube url to mopidy for playback.
-            logger.debug("YTMusic found %s", url)
-            return url
+            if (
+                self.backend.verify_track_url
+                and requests.head(url).status_code == 403
+            ):
+                # It's forbidden. Likely because the player url changed and we
+                # decoded the signature incorrectly.
+                # Refresh the player, log an error, and send back none.
+                logger.error(
+                    "YTMusic found forbidden URL. Updating player URL now."
+                )
+                self.backend._youtube_player_refresh_timer.now()
+            else:
+                # Return the decoded youtube url to mopidy for playback.
+                logger.debug("YTMusic found %s", url)
+                return url
         return None

@@ -37,6 +37,7 @@ class Extension(ext.Extension):
         schema["enable_mood_genre"] = config.Boolean(optional=True)
         schema["enable_scrobbling"] = config.Boolean(optional=True)
         schema["stream_preference"] = config.List(optional=True)
+        schema["verify_track_url"] = config.Boolean(optional=True)
         return schema
 
     def get_command(self):
