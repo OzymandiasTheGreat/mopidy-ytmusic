@@ -5,7 +5,7 @@ from mopidy.models import Ref, Playlist
 
 class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
     def as_list(self):
-        logger.info("YTMusic getting user playlists")
+        logger.debug("YTMusic getting user playlists")
         refs = []
         try:
             playlists = self.backend.api.get_library_playlists(limit=100)
@@ -23,7 +23,7 @@ class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
 
     def lookup(self, uri):
         bId = parse_uri(uri)
-        logger.info('YTMusic looking up playlist "%s"', bId)
+        logger.debug('YTMusic looking up playlist "%s"', bId)
         try:
             pls = self.backend.api.get_playlist(
                 bId, limit=self.backend.playlist_item_limit
@@ -42,7 +42,7 @@ class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
 
     def get_items(self, uri):
         bId = parse_uri(uri)
-        logger.info('YTMusic getting playlist items for "%s"', bId)
+        logger.debug('YTMusic getting playlist items for "%s"', bId)
         try:
             pls = self.backend.api.get_playlist(
                 bId, limit=self.backend.playlist_item_limit
@@ -56,7 +56,7 @@ class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
         return None
 
     def create(self, name):
-        logger.info('YTMusic creating playlist "%s"', name)
+        logger.debug('YTMusic creating playlist "%s"', name)
         try:
             bId = self.backend.api.create_playlist(name, "")
         except Exception:
@@ -64,7 +64,7 @@ class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
             bId = None
         if bId:
             uri = f"ytmusic:playlist:{bId}"
-            logger.info('YTMusic created playlist "%s"', uri)
+            logger.debug('YTMusic created playlist "%s"', uri)
             return Playlist(
                 uri=uri,
                 name=name,
@@ -74,7 +74,7 @@ class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
         return None
 
     def delete(self, uri):
-        logger.info('YTMusic deleting playlist "%s"', uri)
+        logger.debug('YTMusic deleting playlist "%s"', uri)
         bId = parse_uri(uri)
         try:
             self.backend.api.delete_playlist(bId)
@@ -88,7 +88,7 @@ class YTMusicPlaylistsProvider(backend.PlaylistsProvider):
 
     def save(self, playlist):
         bId = parse_uri(playlist.uri)
-        logger.info('YTMusic saving playlist "%s" "%s"', playlist.name, bId)
+        logger.debug('YTMusic saving playlist "%s" "%s"', playlist.name, bId)
         try:
             pls = self.backend.api.get_playlist(
                 bId, limit=self.backend.playlist_item_limit

@@ -95,7 +95,7 @@ class YTMusicBackend(
         t0 = time.time()
         self.playback.Youtube_Player_URL = self._get_youtube_player()
         t = time.time() - t0
-        logger.info("Youtube Player URL refreshed in %.2fs", t)
+        logger.debug("YTMusic Player URL refreshed in %.2fs", t)
 
     def _get_youtube_player(self):
         # Refresh our js player URL so YDL can decode the signature correctly.
@@ -117,7 +117,7 @@ class YTMusicBackend(
         t0 = time.time()
         self._get_auto_playlists()
         t = time.time() - t0
-        logger.info("Auto Playlists refreshed in %.2fs", t)
+        logger.info("YTMusic Auto Playlists refreshed in %.2fs", t)
 
     def _get_auto_playlists(self):
         try:
