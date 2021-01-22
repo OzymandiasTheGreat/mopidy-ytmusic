@@ -382,7 +382,6 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             else:
                 try:
                     res = self.backend.api.get_album(bId)
-                    self.addThumbnails(bId, res)
                     tracks = self.albumToTracks(res, bId)
                     logger.debug(
                         'YTMusic found %d songs for album "%s" in library',
@@ -409,38 +408,57 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         return []
 
     def lookup(self, uri):
-        bId, _ = parse_uri(uri)
-        if uri.startswith("ytmusic:album:"):
-            try:
-                res = self.backend.api.get_album(bId)
-                self.addThumbnails(bId, res)
-                tracks = self.albumToTracks(res, bId)
-                return tracks
-            except Exception:
-                logger.exception(
-                    'YTMusic failed getting tracks for album "%s"', bId
-                )
-        elif uri.startswith("ytmusic:artist:"):
-            try:
-                res = self.backend.api.get_artist(bId)
-                tracks = self.artistToTracks(res)
-                return tracks
-            except Exception:
-                logger.exception(
-                    'YTMusic failed getting tracks for artist "%s"', bId
-                )
-        elif uri.startswith("ytmusic:playlist:"):
-            try:
-                res = self.backend.api.get_playlist(
-                    bId, limit=self.backend.playlist_item_limit
-                )
-                tracks = self.playlistToTracks(res)
-                return tracks
-            except Exception:
-                logger.exception(
-                    'YTMusic failed getting tracks for playlist "%s"', bId
-                )
-        elif (bId) in self.TRACKS:
+        bId, upload = parse_uri(uri)
+        if upload:
+            if uri.startswith("ytmusic:album:"):
+                try:
+                    res = self.backend.api.get_library_upload_album(bId)
+                    tracks = self.albumToTracks(res, bId)
+                    return tracks
+                except Exception:
+                    logger.exception(
+                        'YTMusic failed getting tracks for album "%s"', bId
+                    )
+            elif uri.startswith("ytmusic:artist:"):
+                try:
+                    res = self.backend.api.get_library_upload_artist(bId)
+                    tracks = self.artistToTracks(res)
+                    return tracks
+                except Exception:
+                    logger.exception(
+                        'YTMusic failed getting tracks for artist "%s"', bId
+                    )
+        else:
+            if uri.startswith("ytmusic:album:"):
+                try:
+                    res = self.backend.api.get_album(bId)
+                    tracks = self.albumToTracks(res, bId)
+                    return tracks
+                except Exception:
+                    logger.exception(
+                        'YTMusic failed getting tracks for album "%s"', bId
+                    )
+            elif uri.startswith("ytmusic:artist:"):
+                try:
+                    res = self.backend.api.get_artist(bId)
+                    tracks = self.artistToTracks(res)
+                    return tracks
+                except Exception:
+                    logger.exception(
+                        'YTMusic failed getting tracks for artist "%s"', bId
+                    )
+            elif uri.startswith("ytmusic:playlist:"):
+                try:
+                    res = self.backend.api.get_playlist(
+                        bId, limit=self.backend.playlist_item_limit
+                    )
+                    tracks = self.playlistToTracks(res)
+                    return tracks
+                except Exception:
+                    logger.exception(
+                        'YTMusic failed getting tracks for playlist "%s"', bId
+                    )
+        if (bId) in self.TRACKS:
             return [self.TRACKS[bId]]
         return []
 
@@ -488,29 +506,62 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         ret = {}
         for uri in uris:
             images = []
-            # Not handling updloaded stuff just yet.
-            if len(uri.split(":")) == 3:
+            comp = uri.split(":")
+            if len(comp) == 3:
                 logger.debug("YTMusic getting images for %s", uri)
-                _, func, bId = uri.split(":")
+                func, bId = comp[1:3]
                 if bId not in self.IMAGES:
-                    if func == "artist":
-                        data = self.backend.api.get_artist(bId)
-                        images = self.addThumbnails(bId, data, False)
-                    elif func == "album":
-                        data = self.backend.api.get_album(bId)
-                        images = self.addThumbnails(bId, data)
-                    elif func == "playlist":
-                        data = self.backend.api.get_playlist(bId)
-                        images = self.addThumbnails(bId, data, False)
-                    elif func == "track":
-                        if (
-                            bId in self.TRACKS
-                            and self.TRACKS[bId].album is not None
-                            and self.TRACKS[bId].album.uri is not None
-                        ):
-                            _, _, album = self.TRACKS[bId].album.uri.split(":")
-                            data = self.backend.api.get_album(album)
+                    try:
+                        if func == "artist":
+                            data = self.backend.api.get_artist(bId)
+                            images = self.addThumbnails(bId, data, False)
+                        elif func == "album":
+                            data = self.backend.api.get_album(bId)
                             images = self.addThumbnails(bId, data)
+                        elif func == "playlist":
+                            data = self.backend.api.get_playlist(bId)
+                            images = self.addThumbnails(bId, data, False)
+                        elif func == "track":
+                            if (
+                                bId in self.TRACKS
+                                and self.TRACKS[bId].album is not None
+                                and self.TRACKS[bId].album.uri is not None
+                            ):
+                                album, upload = parse_uri(self.TRACKS[bId].album.uri)
+                                if upload:
+                                    data = self.backend.api.get_library_upload_album(album)
+                                else:
+                                    data = self.backend.api.get_album(album)
+                                images = self.addThumbnails(bId, data)
+                    except Exception:
+                        logger.error("YTMusic unable to get image url for %s", uri)
+                else:
+                    images = self.IMAGES[bId]
+            elif len(comp) == 4 and comp[3] == "upload":
+                logger.debug("YTMusic getting images for %s", uri)
+                func, bId = comp[1:3]
+                if bId not in self.IMAGES:
+                    try:
+                        if func == "artist":
+                            data = self.backend.api.get_library_upload_artist(bId)
+                            images = self.addThumbnails(bId, data, False)
+                        elif func == "album":
+                            data = self.backend.api.get_library_upload_album(bId)
+                            images = self.addThumbnails(bId, data)
+                        elif func == "track":
+                            if (
+                                bId in self.TRACKS
+                                and self.TRACKS[bId].album is not None
+                                and self.TRACKS[bId].album.uri is not None
+                            ):
+                                album, upload = parse_uri(self.TRACKS[bId].album.uri)
+                                if upload:
+                                    data = self.backend.api.get_library_upload_album(album)
+                                else:
+                                    data = self.backend.api.get_album(album)
+                                images = self.addThumbnails(bId, data)
+                    except Exception:
+                        logger.error("YTMusic unable to get image url for uploaded %s", uri)
                 else:
                     images = self.IMAGES[bId]
             ret[uri] = images
@@ -783,21 +834,27 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
 
     def albumToTracks(self, album, bId):
         ret = []
-        date = f"{album['releaseDate']['year']}"
+        if 'realeaseDate' in album:
+            date = f"{album['releaseDate']['year']}"
+        elif 'year' in album:
+            date = album['year']
+        else:
+            date = "0000"
         artists = []
         artistname = ""
-        for artist in album["artist"]:
-            if artist["id"] not in self.ARTISTS:
-                self.ARTISTS[artist["id"]] = Artist(
-                    uri=f"ytmusic:artist:{artist['id']}",
-                    name=artist["name"],
-                    sortname=artist["name"],
-                    musicbrainz_id="",
-                )
-            artists.append(self.ARTISTS[artist["id"]])
-            artistname = artist["name"]
-            # Break here to only collect the first artist.
-            break
+        if type(album["artist"]) is list:
+            artist = album['artist'][0]
+        else:
+            artist = album['artist']
+        if artist["id"] not in self.ARTISTS:
+            self.ARTISTS[artist["id"]] = Artist(
+                uri=f"ytmusic:artist:{artist['id']}",
+                name=artist["name"],
+                sortname=artist["name"],
+                musicbrainz_id="",
+            )
+        artists.append(self.ARTISTS[artist["id"]])
+        artistname = artist["name"]
         if bId not in self.ALBUMS:
             self.ALBUMS[bId] = Album(
                 uri=f"ytmusic:album:{bId}",
@@ -813,7 +870,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         for song in album["tracks"]:
             if song["videoId"] not in self.TRACKS:
                 # Annoying workaround for Various Artists
-                if song["artists"] == artistname:
+                if 'artists' not in song or song["artists"] == artistname:
                     songartists = artists
                 else:
                     songartists = [Artist(name=song["artists"])]
@@ -839,6 +896,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     last_modified=None,
                 )
             ret.append(self.TRACKS[song["videoId"]])
+        self.addThumbnails(bId, album)
         return ret
 
     def parseSearch(self, results, field=None, queries=[]):
