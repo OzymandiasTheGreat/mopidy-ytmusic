@@ -140,9 +140,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                             uri=f"ytmusic:album:{a['browseId']}:upload",
                             name=a["title"],
                         )
-                        for a in self.backend.api.get_library_upload_albums(
-                            limit=100
-                        )
+                        for a in self.backend.api.get_library_upload_albums()
                     ]
                     logger.debug(
                         "YTMusic found %d uploaded albums", len(upload_albums)
@@ -340,7 +338,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     logger.debug(
                         'YTMusic found %d songs for uploaded artist "%s"',
                         len(res),
-                        res[0]["artist"]["name"],
+                        res[0]["artist"][0]["name"],
                     )
                     return [Ref.track(uri=t.uri, name=t.name) for t in tracks]
                 except Exception:
