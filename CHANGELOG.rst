@@ -2,6 +2,13 @@
 Changelog
 *********
 
+v0.2.1
+========================================
+
+- Added support for the get_images() library provider.
+- Work-around for race condition when Google updates the javascript player.
+- Improved support for listening to uploaded music.
+
 v0.2.0
 ========================================
 
