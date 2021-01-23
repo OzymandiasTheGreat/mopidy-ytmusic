@@ -580,7 +580,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 else:
                     images = self.IMAGES[bId]
             ret[uri] = images
-            logger.info("YTMusic found %d image urls for %s", len(images), uri)
+            logger.debug("YTMusic found %d image urls for %s", len(images), uri)
         return ret
 
     def search(self, query=None, uris=None, exact=False):
