@@ -6,6 +6,14 @@ Mopidy-YTMusic
     :target: https://pypi.org/project/Mopidy-YTMusic/
     :alt: Latest PyPI version
 
+.. image:: https://img.shields.io/github/v/release/OzymandiasTheGreat/mopidy-ytmusic
+    :target: https://github.com/OzymandiasTheGreat/mopidy-ytmusic/releases
+    :alt: Latest PyPI version
+
+.. image:: https://img.shields.io/github/commits-since/OzymandiasTheGreat/mopidy-ytmusic/latest
+    :target: https://github.com/OzymandiasTheGreat/mopidy-ytmusic/commits/master
+    :alt: Latest PyPI version
+
 Mopidy extension for playing music from YouTube Music
 
 
@@ -52,6 +60,7 @@ Other configuration options are as follows:
 - :code:`enable_mood_genre` - Show Mood & Genre playlists from YouTube Music's Explore directory. Default: yes
 - :code:`enable_scrobbling` - Mark tracks as played on YouTube Music after listening.  Default: yes
 - :code:`stream_preference` - Comma separated list of itags in the order of preference you want for stream.  Default: "141, 251, 140, 250, 249"
+- :code:`verify_track_url` - Verify that track url is valid before sending to mopidy. Default: yes.  There should be no need to set this to no.
 
 Info on YouTube Music streams:
 

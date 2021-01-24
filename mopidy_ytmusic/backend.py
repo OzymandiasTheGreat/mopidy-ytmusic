@@ -56,6 +56,7 @@ class YTMusicBackend(
         self.liked_songs = config["ytmusic"]["enable_liked_songs"]
         self.mood_genre = config["ytmusic"]["enable_mood_genre"]
         self.stream_preference = config["ytmusic"]["stream_preference"]
+        self.verify_track_url = config["ytmusic"]["verify_track_url"]
 
         if config["ytmusic"]["auth_json"]:
             self._ytmusicapi_auth_json = config["ytmusic"]["auth_json"]
@@ -75,7 +76,6 @@ class YTMusicBackend(
         if self._auto_playlist_refresh_rate:
             self._auto_playlist_refresh_timer = RepeatingTimer(
                 self._refresh_auto_playlists, self._auto_playlist_refresh_rate
-
             )
             self._auto_playlist_refresh_timer.start()
 
@@ -96,7 +96,7 @@ class YTMusicBackend(
         t0 = time.time()
         self.playback.Youtube_Player_URL = self._get_youtube_player()
         t = time.time() - t0
-        logger.info("Youtube Player URL refreshed in %.2fs", t)
+        logger.debug("YTMusic Player URL refreshed in %.2fs", t)
 
     def _get_youtube_player(self):
         # Refresh our js player URL so YDL can decode the signature correctly.
@@ -118,7 +118,7 @@ class YTMusicBackend(
         t0 = time.time()
         self._get_auto_playlists()
         t = time.time() - t0
-        logger.info("Auto Playlists refreshed in %.2fs", t)
+        logger.info("YTMusic Auto Playlists refreshed in %.2fs", t)
 
     def _get_auto_playlists(self):
         try:

@@ -20,7 +20,7 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
         self.YoutubeIE = self.YoutubeDL.get_info_extractor("Youtube")
 
     def translate_uri(self, uri):
-        logger.info('YTMusic PlaybackProvider.translate_uri "%s"', uri)
+        logger.debug('YTMusic PlaybackProvider.translate_uri "%s"', uri)
 
         if "ytmusic:track:" not in uri:
             return None
@@ -122,12 +122,25 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
                 logger.error("Unable to get URL from stream for %s", bId)
                 return None
             logger.info(
-                "Found %s stream with %d bitrate for %s",
+                "YTMusic Found %s stream with %d bitrate for %s",
                 playstr["audioQuality"],
                 playstr["bitrate"],
                 bId,
             )
         if url is not None:
-            # Return the decoded youtube url to mopidy for playback.
-            return url
+            if (
+                self.backend.verify_track_url
+                and requests.head(url).status_code == 403
+            ):
+                # It's forbidden. Likely because the player url changed and we
+                # decoded the signature incorrectly.
+                # Refresh the player, log an error, and send back none.
+                logger.error(
+                    "YTMusic found forbidden URL. Updating player URL now."
+                )
+                self.backend._youtube_player_refresh_timer.now()
+            else:
+                # Return the decoded youtube url to mopidy for playback.
+                logger.debug("YTMusic found %s", url)
+                return url
         return None
