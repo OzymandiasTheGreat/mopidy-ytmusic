@@ -140,7 +140,9 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                             uri=f"ytmusic:album:{a['browseId']}:upload",
                             name=a["title"],
                         )
-                        for a in self.backend.api.get_library_upload_albums()
+                        for a in self.backend.api.get_library_upload_albums(
+                            limit=100
+                        )
                     ]
                     logger.debug(
                         "YTMusic found %d uploaded albums", len(upload_albums)

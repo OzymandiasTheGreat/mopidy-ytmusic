@@ -49,6 +49,11 @@ Authenticated users have access to their listening history, likes,
 playlists and uploaded music.  Premium users have access to high quality audio
 streams and other premium content. 
 
+Annoyingly, those authentication credentials will expire from time to time.
+Run :code:`mopidy ytmusic reauth` to paste in new headers and overwrite your
+existing auth.json file.  Then restart mopidy for the new credentials to go
+into effect.
+
 Other configuration options are as follows:
 
 - :code:`auto_playlist_refresh` - time (in minutes) to refresh the Auto playlists.  Default: 60. Set to 0 to disable auto playlists.

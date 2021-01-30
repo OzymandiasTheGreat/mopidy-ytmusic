@@ -2,12 +2,21 @@
 Changelog
 *********
 
+v0.2.2
+========================================
+
+- Update to ytmusicapi v0.14.0 to fix search issues.
+- added "mopidy ytmusic reauth" convenience command.
+- fix for attempting to scrobble tracks from other backends.
+
+
 v0.2.1
 ========================================
 
 - Added support for the get_images() library provider.
 - Work-around for race condition when Google updates the javascript player.
 - Improved support for listening to uploaded music.
+
 
 v0.2.0
 ========================================
