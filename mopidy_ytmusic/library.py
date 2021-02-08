@@ -1134,7 +1134,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
 def parse_uri(uri):
     components = uri.split(":")
     if len(components) < 3:
-        return None, False 
+        return None, False
     bId = components[2]
     upload = (len(components) > 3 and components[3] == "upload") or False
     return bId, upload
