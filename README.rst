@@ -22,7 +22,7 @@ Installation
 
 Install by running::
 
-    python3 -m pip install Mopidy-YTMusic
+    sudo python3 -m pip install Mopidy-YTMusic
 
 See https://mopidy.com/ext/ytmusic/ for alternative installation methods.
 
@@ -30,29 +30,31 @@ See https://mopidy.com/ext/ytmusic/ for alternative installation methods.
 Configuration
 =============
 
-Before starting Mopidy, you must add configuration for
-Mopidy-YTMusic to your Mopidy configuration file::
-
-    [ytmusic]
-    enabled = true
-
 By default Mopidy-YTMusic will connect to YouTube Music as a guest account.  This
 has limited options.  If you would like to connect to YouTube Music with your
 account (free or premium) you'll need to generate an auth.json file and configure
 Mopidy-YTMusic to use it.
 
-To create an auth.json file run :code:`mopidy ytmusic setup` and follow instructions
-in the terminal. When you're done it will tell you what config options you need
-to add to your Mopidy configuration file.
+To create an auth.json file run :code:`mopidy ytmusic setup` (or 
+:code:`sudo mopidyctl ytmusic setup` if you're running mopidy as a service, also see below) and
+follow the instructions in the terminal. When you're done it will tell you what
+config options you need to add to your Mopidy configuration file.
+It should look something like this:
+
+.. code::
+
+    [ytmusic]
+    auth_json = /path/to/auth.json
+
 
 Authenticated users have access to their listening history, likes,
 playlists and uploaded music.  Premium users have access to high quality audio
 streams and other premium content. 
 
 Annoyingly, those authentication credentials will expire from time to time.
-Run :code:`mopidy ytmusic reauth` to paste in new headers and overwrite your
-existing auth.json file.  Then restart mopidy for the new credentials to go
-into effect.
+Run :code:`mopidy ytmusic reauth` (or :code:`sudo mopidyctl ytmusic reauth`) to
+paste in new headers and overwrite your existing auth.json file.
+Then restart mopidy for the new credentials to go into effect.
 
 Other configuration options are as follows:
 
@@ -85,6 +87,24 @@ Info on YouTube Music streams:
 
 .. [*] Available to premium accounts only.
 
+
+Note for users running mopidy as a service:
+-------------------------------------------
+
+Since the mopidy user will end up
+trying to create the auth.json file, you'll likely want to specify the path as
+:code:`/tmp` when you run :code:`sudo mopidyctl ytmusic setup`.  Then you can
+move the :code:`/tmp/auth.json` to :code:`/etc/mopidy` and add:
+
+.. code::
+
+    [ytmusic]
+    auth_json = /etc/mopidy/auth.json
+
+to your :code:`/etc/mopidy/mopidy.conf` file.  To make reauthentication easier,
+make sure the auth.json file is owned by the mopidy user by running
+:code:`sudo chown mopidy /etc/mopidy/auth.json`.
+
 Build for Local Install
 =======================
 
@@ -93,6 +113,7 @@ Build for Local Install
 3. The :code:`dist/Mopidy-YTMusic-x.x.x.tar.gz` file is what you'll use to install.
 4. With pip: :code:`python3 -m pip install dist/Mopidy-YTMusic-x.x.x.tar.gz` to install or reinstall over an existing version.
 5. Do configuration stuff if you haven't already.  
+
 
 Project resources
 =================
