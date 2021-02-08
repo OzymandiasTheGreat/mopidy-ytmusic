@@ -175,6 +175,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 logger.exception("YTMusic failed getting listening history")
         elif uri == "ytmusic:watch":
             try:
+                track_id = None
                 playback = self.backend.playback
                 if playback.last_id is not None:
                     track_id = playback.last_id
