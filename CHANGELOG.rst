@@ -2,6 +2,12 @@
 Changelog
 *********
 
+v0.2.3
+========================================
+
+- Bug fixes for Iris
+- (barely functional) support added for shoutcast
+
 v0.2.2
 ========================================
 

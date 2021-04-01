@@ -19,6 +19,25 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
         )
         self.YoutubeIE = self.YoutubeDL.get_info_extractor("Youtube")
 
+    def change_track(self, track):
+        """
+        This is dumb.  This is an exact copy of the original method
+        with the addition of the call to set_metadata.  Why doesn't
+        mopidy just do this?
+        """
+        uri = self.translate_uri(track.uri)
+        if uri != track.uri:
+            logger.debug("Backend translated URI from %s to %s", track.uri, uri)
+        if not uri:
+            return False
+        self.audio.set_uri(
+            uri,
+            live_stream=self.is_live(uri),
+            download=self.should_download(uri),
+        ).get()
+        self.audio.set_metadata(track)
+        return True
+
     def translate_uri(self, uri):
         logger.debug('YTMusic PlaybackProvider.translate_uri "%s"', uri)
 
