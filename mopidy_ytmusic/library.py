@@ -860,19 +860,20 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             date = "0000"
         artists = []
         artistname = ""
-        if type(album["artist"]) is list:
-            artist = album["artist"][0]
-        else:
-            artist = album["artist"]
-        if artist["id"] not in self.ARTISTS:
-            self.ARTISTS[artist["id"]] = Artist(
-                uri=f"ytmusic:artist:{artist['id']}",
-                name=artist["name"],
-                sortname=artist["name"],
-                musicbrainz_id="",
-            )
-        artists.append(self.ARTISTS[artist["id"]])
-        artistname = artist["name"]
+        if "artist" in album:
+            if type(album["artist"]) is list:
+                artist = album["artist"][0]
+            else:
+                artist = album["artist"]
+            if artist["id"] not in self.ARTISTS:
+                self.ARTISTS[artist["id"]] = Artist(
+                    uri=f"ytmusic:artist:{artist['id']}",
+                    name=artist["name"],
+                    sortname=artist["name"],
+                    musicbrainz_id="",
+                )
+            artists.append(self.ARTISTS[artist["id"]])
+            artistname = artist["name"]
         if bId not in self.ALBUMS:
             self.ALBUMS[bId] = Album(
                 uri=f"ytmusic:album:{bId}",
