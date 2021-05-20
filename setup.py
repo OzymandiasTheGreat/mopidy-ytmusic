@@ -25,6 +25,6 @@ setup(
     packages=['mopidy_ytmusic'],
     package_dir={"": "."},
     package_data={"mopidy_ytmusic": ["*.conf"]},
-    install_requires=['mopidy==3.*,>=3.0.0', 'youtube-dl==2021.*,>=2021.1.1', 'ytmusicapi>=0.14'],
+    install_requires=['mopidy==3.*,>=3.0.0', 'youtube-dl==2021.*,>=2021.1.1', 'ytmusicapi==0.*,>=0.17.1'],
     extras_require={"dev": ["dephell==0.*,>=0.8.0", "flake8==3.*,>=3.8.4", "setuptools==51.*,>=51.0.0", "sphinx==3.*,>=3.3.1"]},
 )

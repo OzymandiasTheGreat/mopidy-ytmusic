@@ -53,7 +53,7 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
             return None
 
     def _get_track(self, bId):
-        streams = self.backend.api.get_streaming_data(bId)
+        streams = self.backend.api.get_song(bId)["streamingData"]
         playstr = None
         url = None
         if self.backend.stream_preference:

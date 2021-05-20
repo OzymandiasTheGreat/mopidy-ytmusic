@@ -807,14 +807,14 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
 
     def uploadAlbumToTracks(self, album, bId):
         ret = []
-        if album["artist"]["id"] not in self.ARTISTS:
-            self.ARTISTS[album["artist"]["id"]] = Artist(
-                uri=f"ytmusic:artist:{album['artist']['id']}:upload",
-                name=album["artist"]["name"],
-                sortname=album["artist"]["name"],
+        if album["artists"][0]["id"] not in self.ARTISTS:
+            self.ARTISTS[album["artists"][0]["id"]] = Artist(
+                uri=f"ytmusic:artist:{album['artists'][0]['id']}:upload",
+                name=album["artists"][0]["name"],
+                sortname=album["artists"][0]["name"],
                 musicbrainz_id="",
             )
-        artists = [self.ARTISTS[album["artist"]["id"]]]
+        artists = [self.ARTISTS[album["artists"][0]["id"]]]
         if bId not in self.ALBUMS:
             self.ALBUMS[bId] = Album(
                 uri=f"ytmusic:album:{bId}:upload",
@@ -987,17 +987,20 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 try:
                     if result["browseId"] not in self.ALBUMS:
                         date = result["year"]
+                        artists = []
+                        for a in result["artists"]:
+                            if a["id"] not in self.ARTISTS:
+                                self.ARTISTS[a["id"]] = Artist(
+                                    uri=f"ytmusic:artist:{a['id']}",
+                                    name=a["name"],
+                                    sortname=a["name"],
+                                    musicbrainz_id="",
+                                )
+                            artists.append(self.ARTISTS[a["id"]])
                         self.ALBUMS[result["browseId"]] = Album(
                             uri=f"ytmusic:album:{result['browseId']}",
                             name=result["title"],
-                            artists=[
-                                Artist(
-                                    uri="",
-                                    name=result["artist"],
-                                    sortname=result["artist"],
-                                    musicbrainz_id="",
-                                )
-                            ],
+                            artists=artists,
                             num_tracks=None,
                             num_discs=None,
                             date=date,

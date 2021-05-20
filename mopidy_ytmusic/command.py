@@ -56,7 +56,7 @@ class ReSetupCommand(commands.Command):
 
         path = config["ytmusic"]["auth_json"]
         if not path:
-            logger.error('auth_json path not defined in config')
+            logger.error("auth_json path not defined in config")
             return 1
         print('Updating credentials in  "' + str(path) + '"')
         print(
