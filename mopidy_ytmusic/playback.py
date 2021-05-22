@@ -11,6 +11,7 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
         super().__init__(*args, **kwargs)
         self.last_id = None
         self.Youtube_Player_URL = None
+        self.signatureTimestamp = None
         self.YoutubeDL = YoutubeDL(
             {
                 "proxy": httpclient.format_proxy(self.backend.config["proxy"]),
@@ -53,7 +54,9 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
             return None
 
     def _get_track(self, bId):
-        streams = self.backend.api.get_song(bId)["streamingData"]
+        streams = self.backend.api.get_song(
+            bId, signatureTimestamp=self.signatureTimestamp
+        )["streamingData"]
         playstr = None
         url = None
         if self.backend.stream_preference:
