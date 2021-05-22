@@ -14,7 +14,7 @@ readme = ''
 setup(
     long_description=readme,
     name='Mopidy-YTMusic',
-    version='0.2.3',
+    version='0.2.4',
     description=
     'Mopidy extension for playling music/managing playlists in Youtube Music',
     python_requires='==3.*,>=3.7.0',
