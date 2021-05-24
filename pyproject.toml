@@ -28,7 +28,9 @@ ytmusicapi = "^0.17.2"
 flake8 = "^3.8.4"
 setuptools = "^51.0.0"
 Sphinx = "^3.3.1"
-dephell = "^0.8.0"
+poetry2setup = "^1.0.0"
+isort = "^5"
+black = { version = "*", allow-prereleases = true }
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
