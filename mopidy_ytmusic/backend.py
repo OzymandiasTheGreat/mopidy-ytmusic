@@ -1,12 +1,10 @@
 import pykka
 import requests
-import json
 import re
 import random
 import time
 import hashlib
 
-from urllib.parse import parse_qs
 from mopidy import backend
 from mopidy_ytmusic import logger
 from ytmusicapi.ytmusic import YTMusic
@@ -94,7 +92,10 @@ class YTMusicBackend(
 
     def _refresh_youtube_player(self):
         t0 = time.time()
-        self.playback.Youtube_Player_URL = self._get_youtube_player()
+        url = self._get_youtube_player()
+        if self.playback.Youtube_Player_URL != url:
+            self.playback.Youtube_Player_URL = url
+            self.playback.signatureTimestamp = self._get_signatureTimestamp()
         t = time.time() - t0
         logger.debug("YTMusic Player URL refreshed in %.2fs", t)
 
@@ -108,10 +109,25 @@ class YTMusicBackend(
         m = re.search(r'jsUrl"\s*:\s*"([^"]+)"', response.text)
         if m:
             url = m.group(1)
-            logger.info("YTMusic updated player URL to %s", url)
+            logger.debug("YTMusic updated player URL to %s", url)
             return url
         else:
             logger.error("YTMusic unable to extract player URL.")
+            return None
+
+    def _get_signatureTimestamp(self):
+        response = requests.get(
+            "https://music.youtube.com" + self.playback.Youtube_Player_URL,
+            headers=self.api.headers,
+            proxies=self.api.proxies,
+        )
+        m = re.search(r"signatureTimestamp[:=](\d+)", response.text)
+        if m:
+            ts = m.group(1)
+            logger.debug("YTMusic updated signatureTimestamp to %s", ts)
+            return ts
+        else:
+            logger.error("YTMusic unable to extract signatureTimestamp.")
             return None
 
     def _refresh_auto_playlists(self):
@@ -155,19 +171,15 @@ class YTMusicBackend(
     def scrobble_track(self, bId):
         # Called through YTMusicScrobbleListener
         # Let YTMusic know we're playing this track so it will be added to our history.
-        endpoint = "https://www.youtube.com/get_video_info"
-        params = {
-            "video_id": bId,
-            "hl": self.api.language,
-            "el": "detailpage",
-            "c": "WEB_REMIX",
-            "cver": "0.1",
-        }
-        response = requests.get(
-            endpoint, params, headers=self.api.headers, proxies=self.api.proxies
+        player_response = self.api._send_request(
+            "player",
+            {
+                "playbackContext": {
+                    "contentPlaybackContext": {"signatureTimestamp": 18766}
+                },
+                "video_id": bId,
+            },
         )
-        text = parse_qs(response.text)
-        player_response = json.loads(text["player_response"][0])
         trackurl = re.sub(
             r"plid=",
             "list=",
@@ -186,13 +198,6 @@ class YTMusicBackend(
                 )
             ),
             "referrer": "https://music.youtube.com",
-            "cbr": text["cbr"][0],
-            "cbrver": text["cbrver"][0],
-            "c": text["c"][0],
-            "cver": text["cver"][0],
-            "cos": text["cos"][0],
-            "cosver": text["cosver"][0],
-            "cr": text["cr"][0],
             "ver": 2,
         }
         tr = requests.get(

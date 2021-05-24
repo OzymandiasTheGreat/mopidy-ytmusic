@@ -1,6 +1,11 @@
 *********
 Changelog
 *********
+v0.2.4
+========================================
+
+- Update to ytmusicapi v0.17.2 to handle new changes.
+- Lots of rewrites to work around new google changes.
 
 v0.2.3
 ========================================
