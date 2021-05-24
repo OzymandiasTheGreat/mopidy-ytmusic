@@ -1,9 +1,9 @@
 import requests
 import re
 from urllib.parse import parse_qs
-from mopidy import backend, httpclient
+from mopidy import backend
 from mopidy_ytmusic import logger
-from youtube_dl import YoutubeDL
+from pytube.cipher import Cipher
 
 
 class YTMusicPlaybackProvider(backend.PlaybackProvider):
@@ -12,13 +12,19 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
         self.last_id = None
         self.Youtube_Player_URL = None
         self.signatureTimestamp = None
-        self.YoutubeDL = YoutubeDL(
-            {
-                "proxy": httpclient.format_proxy(self.backend.config["proxy"]),
-                "nocheckcertificate": True,
-            }
-        )
-        self.YoutubeIE = self.YoutubeDL.get_info_extractor("Youtube")
+        self.PyTubeCipher = None
+
+    def update_cipher(self, playerurl):
+        self.Youtube_Player_URL = playerurl
+        response = requests.get("https://music.youtube.com" + playerurl)
+        m = re.search(r"signatureTimestamp[:=](\d+)", response.text)
+        if m:
+            self.signatureTimestamp = m.group(1)
+            self.PyTubeCipher = Cipher(js=response.text)
+            logger.debug("YTMusic updated signatureTimestamp to %s", self.signatureTimestamp)
+        else:
+            logger.error("YTMusic unable to extract signatureTimestamp.")
+            return None
 
     def change_track(self, track):
         """
@@ -132,11 +138,7 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
             # Use Youtube-DL's Info Extractor to decode the signature.
             if "signatureCipher" in playstr:
                 sc = parse_qs(playstr["signatureCipher"])
-                sig = self.YoutubeIE._decrypt_signature(
-                    sc["s"][0],
-                    bId,
-                    self.Youtube_Player_URL,
-                )
+                sig = self.PyTubeCipher.get_signature(ciphered_signature=sc["s"][0])
                 url = sc["url"][0] + "&sig=" + sig + "&ratebypass=yes"
             elif "url" in playstr:
                 url = playstr["url"]

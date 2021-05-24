@@ -94,8 +94,7 @@ class YTMusicBackend(
         t0 = time.time()
         url = self._get_youtube_player()
         if self.playback.Youtube_Player_URL != url:
-            self.playback.Youtube_Player_URL = url
-            self.playback.signatureTimestamp = self._get_signatureTimestamp()
+            self.playback.update_cipher(playerurl=url)
         t = time.time() - t0
         logger.debug("YTMusic Player URL refreshed in %.2fs", t)
 
@@ -113,21 +112,6 @@ class YTMusicBackend(
             return url
         else:
             logger.error("YTMusic unable to extract player URL.")
-            return None
-
-    def _get_signatureTimestamp(self):
-        response = requests.get(
-            "https://music.youtube.com" + self.playback.Youtube_Player_URL,
-            headers=self.api.headers,
-            proxies=self.api.proxies,
-        )
-        m = re.search(r"signatureTimestamp[:=](\d+)", response.text)
-        if m:
-            ts = m.group(1)
-            logger.debug("YTMusic updated signatureTimestamp to %s", ts)
-            return ts
-        else:
-            logger.error("YTMusic unable to extract signatureTimestamp.")
             return None
 
     def _refresh_auto_playlists(self):
