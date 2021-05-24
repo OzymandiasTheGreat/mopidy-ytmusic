@@ -1,0 +1,69 @@
+name: Create & Publish a New Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      relVersion:
+        description: 'Increment `patch`, `minor`, or `major` version, or specify semver manually.'
+        required: true
+        default: 'patch'
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        # We want the full repo, so we can parse the log and update our CHANGELOG.rst
+        fetch-depth: 0
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        # install hub so we can create a GitHub release easily.
+        sudo apt-get update && sudo apt-get install hub
+        # install poetry
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+        . $HOME/.poetry/env
+        # install our dependencies and update our poetry.lock file
+        poetry update
+    - name: Increment version, reformat, update changelog, build, commit, and publish
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        . $HOME/.poetry/env
+        # Get the previous version.
+        prev=$(poetry version | awk '{print $2}')
+        # Set the new version.
+        poetry version ${{ github.event.inputs.relVersion }}
+        # Get the current version.
+        rel=$(poetry version | awk '{print $2}')
+        # Convert pyproject.toml to setup.py
+        poetry run poetry2setup > setup.py
+        # Generate requirements.txt
+        poetry export -f requirements.txt --output requirements.txt
+        # fix formatting with black and isort
+        poetry run black .
+        poetry run isort .
+        # Create our changelog / release notes.
+        echo -e "\nv$rel\n========================================\n" > /tmp/release.txt
+        git log v${prev}..HEAD --oneline | sed -E 's/^\w+/-/' >> /tmp/release.txt
+        sed -i '3r /tmp/release.txt' CHANGELOG.rst
+        sed -i '1d; 3d' /tmp/release.txt
+        # Build the release.
+        poetry build
+        # Configure git user.
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        # Add all of our changes.
+        git add .
+        # Commit and push our changes to GitHub.
+        git commit -m "v${rel}"
+        git push
+        # Publish release to pypi.
+        test -n "$POETRY_PYPI_TOKEN_PYPI" && poetry publish || echo "No PYPI API token defined."
+        # Publish release to github.
+        hub release create -F /tmp/release.txt -a dist/Mopidy-YTMusic-${rel}.tar.gz -a dist/Mopidy_YTMusic-${rel}-py3-none-any.whl v${rel}
