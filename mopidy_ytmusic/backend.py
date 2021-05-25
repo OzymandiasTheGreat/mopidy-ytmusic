@@ -93,26 +93,31 @@ class YTMusicBackend(
     def _refresh_youtube_player(self):
         t0 = time.time()
         url = self._get_youtube_player()
-        if self.playback.Youtube_Player_URL != url:
-            self.playback.update_cipher(playerurl=url)
-        t = time.time() - t0
-        logger.debug("YTMusic Player URL refreshed in %.2fs", t)
+        if url is not None:
+            if self.playback.Youtube_Player_URL != url:
+                self.playback.update_cipher(playerurl=url)
+            t = time.time() - t0
+            logger.debug("YTMusic Player URL refreshed in %.2fs", t)
 
     def _get_youtube_player(self):
         # Refresh our js player URL so YDL can decode the signature correctly.
-        response = requests.get(
-            "https://music.youtube.com",
-            headers=self.api.headers,
-            proxies=self.api.proxies,
-        )
-        m = re.search(r'jsUrl"\s*:\s*"([^"]+)"', response.text)
-        if m:
-            url = m.group(1)
-            logger.debug("YTMusic updated player URL to %s", url)
-            return url
-        else:
-            logger.error("YTMusic unable to extract player URL.")
-            return None
+        try: 
+            response = requests.get(
+                "https://music.youtube.com",
+                headers=self.api.headers,
+                proxies=self.api.proxies,
+            )
+            m = re.search(r'jsUrl"\s*:\s*"([^"]+)"', response.text)
+            if m:
+                url = m.group(1)
+                logger.debug("YTMusic updated player URL to %s", url)
+                return url
+            else:
+                logger.error("YTMusic unable to extract player URL.")
+                return None
+        except Exception:
+            logger.exception("YTMusic failed to refresh player URL.")
+        return None
 
     def _refresh_auto_playlists(self):
         t0 = time.time()
