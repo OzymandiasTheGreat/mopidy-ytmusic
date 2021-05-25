@@ -52,7 +52,7 @@ jobs:
         # Create the version line.
         echo -e "\nv${rel}\n========================================\n" > /tmp/release.txt
         # Commits since last revision.
-        git log v${prev}..HEAD --oneline | sed -E 's/^\w+/-/' >> /tmp/release.txt
+        git log v${prev}..HEAD --oneline | grep -v "Merge branch 'master'" | sed -E 's/^\w+/-/' >> /tmp/release.txt
         sed -i '3r /tmp/release.txt' CHANGELOG.rst   # Insert after the 3rd line.
         sed -i '1d; 3d' /tmp/release.txt   # Removes the 1st and 3rd lines (RST formatting) for use in GH release.
     - name: Build
