@@ -7,7 +7,9 @@ on:
         description: 'Increment `patch`, `minor`, or `major` version, or specify semver manually.'
         required: true
         default: 'patch'
-
+      relNotes:
+        description: 'General comment about this release that will appear in the commit logs and release message.'
+        required: false
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -26,23 +28,16 @@ jobs:
         sudo apt-get update && sudo apt-get install hub
         # install poetry
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
-        echo "$HOME/.poetry/bin" >> $GITHUB_PATH
-        PATH="$HOME/.poetry/bin:$PATH"
-        # install our dependencies and update our poetry.lock file
-        poetry update
+        echo "$HOME/.poetry/bin" >> $GITHUB_PATH && PATH="$HOME/.poetry/bin:$PATH"
+        poetry update                                         # install py deps and update poetry.lock
         # Configure git user.
-        git config user.name "github-actions"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config user.name "github-actions" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
     - name: Increment version
       run: |
-        # Get the previous version.
-        prev=$(poetry version | awk '{print $2}')
-        # Set the new version.
-        poetry version ${{ github.event.inputs.relVersion }}
-        # Get the current version.
-        rel=$(poetry version | awk '{print $2}')
-        # save env for later steps
-        echo -e "prev=$prev\nrel=$rel" >> $GITHUB_ENV
+        prev=$(poetry version | awk '{print $2}')             # Get the previous version.
+        poetry version ${{ github.event.inputs.relVersion }}  # Set the new version.
+        rel=$(poetry version | awk '{print $2}')              # Get the current version.
+        echo -e "prev=${prev}\nrel=${rel}" >> $GITHUB_ENV     # save env for later steps
     - name: Generate requirements.txt
       run: poetry run poetry2setup > setup.py && poetry export -f requirements.txt --output requirements.txt
     - name: Black & isort
@@ -52,18 +47,27 @@ jobs:
         # Create the version line.
         echo -e "\nv${rel}\n========================================\n" > /tmp/release.txt
         # Commits since last revision.
-        git log v${prev}..HEAD --oneline | grep -v "Merge branch 'master'" | sed -E 's/^\w+/-/' >> /tmp/release.txt
-        sed -i '3r /tmp/release.txt' CHANGELOG.rst   # Insert after the 3rd line.
-        sed -i '1d; 3d' /tmp/release.txt   # Removes the 1st and 3rd lines (RST formatting) for use in GH release.
+        git log v${prev}..HEAD --oneline | sed -E 's/^\w+/-/' >> /tmp/release.txt
+        sed -i '3r /tmp/release.txt' CHANGELOG.rst            # Insert after the 3rd line.
+        sed -i '1d; 3d; 2a \\n### Changes:' /tmp/release.txt  # Update for use in GH release.
+    - name: Release notes.
+      if: ${{ github.event.inputs.relNotes != '' }}
+      env:
+        RELNOTES: ${{ github.event.inputs.relNotes }}
+      run: echo -e "$RELNOTES\n" > /tmp/relnote && sed -i '2r /tmp/relnote' /tmp/release.txt
     - name: Build
       run: poetry build
     - name: Publish to PYPI
+      if: ${{ github.ref == 'refs/heads/master' }}
       env:
         POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-      run: test -n "$POETRY_PYPI_TOKEN_PYPI" && poetry publish || echo "Skipping... No PYPI API token defined."
+      run: test -n "$POETRY_PYPI_TOKEN_PYPI" && poetry publish || echo "No PYPI API token available.  Skipping..."
     - name: Commit Changes
-      run: git add . && git commit -m "v${rel}" && git push
+      env:
+        RELNOTES: ${{ github.event.inputs.relNotes }}
+      run: git add . && git commit -m "v${rel}" -m "$RELNOTES" && git push
     - name: Create GitHub Release
+      if: ${{ github.ref == 'refs/heads/master' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: hub release create -F /tmp/release.txt -a dist/Mopidy-YTMusic-${rel}.tar.gz -a dist/Mopidy_YTMusic-${rel}-py3-none-any.whl v${rel}
