@@ -1,7 +1,7 @@
 # Stolen almost directly from mopidy-gmusic
 import pykka
-
 from mopidy import core, listener
+
 from mopidy_ytmusic import logger
 
 

@@ -1,6 +1,8 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
 from mopidy import commands
+
 from mopidy_ytmusic import logger
 
 
