@@ -1,13 +1,14 @@
 from mopidy import backend
-from mopidy.models import Ref, Track, Album, Artist, SearchResult, Image
-from mopidy_ytmusic import logger
+from mopidy.models import Album, Artist, Image, Ref, SearchResult, Track
 from ytmusicapi.parsers.utils import (
-    nav,
-    TITLE_TEXT,
     NAVIGATION_BROWSE_ID,
-    SINGLE_COLUMN_TAB,
     SECTION_LIST,
+    SINGLE_COLUMN_TAB,
+    TITLE_TEXT,
+    nav,
 )
+
+from mopidy_ytmusic import logger
 
 
 class YTMusicLibraryProvider(backend.LibraryProvider):

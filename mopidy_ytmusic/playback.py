@@ -1,9 +1,11 @@
-import requests
 import re
 from urllib.parse import parse_qs
+
+import requests
 from mopidy import backend
-from mopidy_ytmusic import logger
 from pytube.cipher import Cipher
+
+from mopidy_ytmusic import logger
 
 
 class YTMusicPlaybackProvider(backend.PlaybackProvider):
@@ -21,7 +23,10 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
         if m:
             self.signatureTimestamp = m.group(1)
             self.PyTubeCipher = Cipher(js=response.text)
-            logger.debug("YTMusic updated signatureTimestamp to %s", self.signatureTimestamp)
+            logger.debug(
+                "YTMusic updated signatureTimestamp to %s",
+                self.signatureTimestamp,
+            )
         else:
             logger.error("YTMusic unable to extract signatureTimestamp.")
             return None
@@ -138,7 +143,9 @@ class YTMusicPlaybackProvider(backend.PlaybackProvider):
             # Use Youtube-DL's Info Extractor to decode the signature.
             if "signatureCipher" in playstr:
                 sc = parse_qs(playstr["signatureCipher"])
-                sig = self.PyTubeCipher.get_signature(ciphered_signature=sc["s"][0])
+                sig = self.PyTubeCipher.get_signature(
+                    ciphered_signature=sc["s"][0]
+                )
                 url = sc["url"][0] + "&sig=" + sig + "&ratebypass=yes"
             elif "url" in playstr:
                 url = playstr["url"]

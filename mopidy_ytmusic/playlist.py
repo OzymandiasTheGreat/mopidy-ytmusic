@@ -1,6 +1,7 @@
 from mopidy import backend
+from mopidy.models import Playlist, Ref
+
 from mopidy_ytmusic import logger
-from mopidy.models import Ref, Playlist
 
 
 class YTMusicPlaylistsProvider(backend.PlaylistsProvider):

@@ -1,29 +1,30 @@
+import hashlib
+import random
+import re
+import time
+
 import pykka
 import requests
-import re
-import random
-import time
-import hashlib
-
 from mopidy import backend
-from mopidy_ytmusic import logger
-from ytmusicapi.ytmusic import YTMusic
 from ytmusicapi.parsers.utils import (
-    nav,
-    get_continuations,
     CAROUSEL_TITLE,
+    NAVIGATION_BROWSE_ID,
+    SECTION_LIST,
+    SINGLE_COLUMN_TAB,
     TITLE,
     TITLE_TEXT,
-    NAVIGATION_BROWSE_ID,
-    SINGLE_COLUMN_TAB,
-    SECTION_LIST,
+    get_continuations,
+    nav,
 )
+from ytmusicapi.ytmusic import YTMusic
 
+from mopidy_ytmusic import logger
+
+from .library import YTMusicLibraryProvider
+from .playback import YTMusicPlaybackProvider
+from .playlist import YTMusicPlaylistsProvider
 from .repeating_timer import RepeatingTimer
 from .scrobble_fe import YTMusicScrobbleListener
-from .playback import YTMusicPlaybackProvider
-from .library import YTMusicLibraryProvider
-from .playlist import YTMusicPlaylistsProvider
 
 
 class YTMusicBackend(
@@ -101,7 +102,7 @@ class YTMusicBackend(
 
     def _get_youtube_player(self):
         # Refresh our js player URL so YDL can decode the signature correctly.
-        try: 
+        try:
             response = requests.get(
                 "https://music.youtube.com",
                 headers=self.api.headers,

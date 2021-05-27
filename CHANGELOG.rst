@@ -2,6 +2,25 @@
 Changelog
 *********
 
+v0.3.0
+========================================
+
+- more improvements to release automation.
+- Added exception handling to _get_youtube_player
+- Prevent CHANGELOG entries  for "Merge branch 'master'" commits.
+- Fix typo in release.yml
+- Update release.yml to skip PYPI upload if there is no token and to use default GH token
+- Add GitHub Actions yaml for automating releases.
+- Add missing linefeed.
+- Merge branch 'master' of https://github.com/OzymandiasTheGreat/mopidy-ytmusic
+- switch descramble routines from youtube-dl to pytube
+- Merge branch 'master' of github.com:OzymandiasTheGreat/mopidy-ytmusic
+- Merge branch 'master' of github.com:OzymandiasTheGreat/mopidy-ytmusic
+- Merge branch 'master' of github.com:OzymandiasTheGreat/mopidy-ytmusic
+- Merge branch 'master' of github.com:OzymandiasTheGreat/mopidy-ytmusic
+- Merge branch 'master' of github.com:OzymandiasTheGreat/mopidy-ytmusic
+- - Version bump
+
 v0.2.4
 ========================================
 
