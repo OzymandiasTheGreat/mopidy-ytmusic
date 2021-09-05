@@ -22,7 +22,7 @@ license = "Apache-2.0"
 python = "^3.7"
 Mopidy = "^3"
 pytube = "^10.8"
-ytmusicapi = "^0.17.2"
+ytmusicapi = "^0.19.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.4"

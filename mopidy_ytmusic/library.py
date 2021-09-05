@@ -750,7 +750,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         ret = []
         for track in artist:
             artists = []
-            for a in track["artist"]:
+            for a in track["artists"]:
                 if a["id"] not in self.ARTISTS:
                     self.ARTISTS[a["id"]] = Artist(
                         uri=f"ytmusic:artist:{a['id']}:upload",
@@ -861,11 +861,11 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             date = "0000"
         artists = []
         artistname = ""
-        if "artist" in album:
-            if type(album["artist"]) is list:
-                artist = album["artist"][0]
+        if "artists" in album:
+            if type(album["artists"]) is list:
+                artist = album["artists"][0]
             else:
-                artist = album["artist"]
+                artist = album["artists"]
             if artist["id"] not in self.ARTISTS:
                 self.ARTISTS[artist["id"]] = Artist(
                     uri=f"ytmusic:artist:{artist['id']}",
@@ -887,10 +887,14 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 date=date,
                 musicbrainz_id="",
             )
-        for song in album["tracks"]:
+        for index, song in enumerate(album["tracks"], start=1):
             if song["videoId"] not in self.TRACKS:
+                try:
+                    length = [int(i) for i in song["duration"].split(":")]
+                except ValueError:
+                    length = [0, 0]
                 # Annoying workaround for Various Artists
-                if "artists" not in song or song["artists"] == artistname:
+                if "artists" not in song or song["artists"] == artistname or song["artists"] is None:
                     songartists = artists
                 else:
                     songartists = [Artist(name=song["artists"])]
@@ -902,14 +906,10 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     composers=[],
                     performers=[],
                     genre="",
-                    track_no=int(song["index"])
-                    if str(song["index"]).isnumeric()
-                    else None,
+                    track_no=index,
                     disc_no=None,
                     date=date,
-                    length=int(song["lengthMs"])
-                    if str(song["lengthMs"]).isnumeric()
-                    else None,
+                    length=(length[0] * 60 * 1000) + (length[1] * 1000),
                     bitrate=0,
                     comment="",
                     musicbrainz_id="",
