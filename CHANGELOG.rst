@@ -2,6 +2,12 @@
 Changelog
 *********
 
+v0.3.1
+========================================
+
+- update to latest ytmusicapi
+- Fix badge alt text in README.rst
+
 v0.3.0
 ========================================
 

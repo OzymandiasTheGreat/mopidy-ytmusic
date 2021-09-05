@@ -894,7 +894,11 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 except ValueError:
                     length = [0, 0]
                 # Annoying workaround for Various Artists
-                if "artists" not in song or song["artists"] == artistname or song["artists"] is None:
+                if (
+                    "artists" not in song
+                    or song["artists"] == artistname
+                    or song["artists"] is None
+                ):
                     songartists = artists
                 else:
                     songartists = [Artist(name=song["artists"])]
