@@ -7,7 +7,7 @@ package_data = {"": ["*"]}
 
 install_requires = [
     "Mopidy>=3,<4",
-    "pytube>=11.0.1,<12.0.0",
+    "pytube>=11.0.2,<12.0.0",
     "ytmusicapi>=0.19.1,<0.20.0",
 ]
 
@@ -15,7 +15,7 @@ entry_points = {"mopidy.ext": ["ytmusic = mopidy_ytmusic:Extension"]}
 
 setup_kwargs = {
     "name": "mopidy-ytmusic",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "Mopidy extension for playling music/managing playlists in Youtube Music",
     "long_description": None,
     "author": "Ozymandias (Tomas Ravinskas)",

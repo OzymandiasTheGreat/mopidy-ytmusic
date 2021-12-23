@@ -2,6 +2,13 @@
 Changelog
 *********
 
+v0.3.3
+========================================
+
+- update poetry install.
+- install cleo in build workflow
+- Bump pytube version requirement for #41 & #45
+
 v0.3.2
 ========================================
 
