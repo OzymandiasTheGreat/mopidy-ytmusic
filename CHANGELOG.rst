@@ -2,6 +2,12 @@
 Changelog
 *********
 
+v0.3.4
+========================================
+
+- Merge pull request #50 from antiguru/pytube_ytmusicapi
+- Update pytube and ytmusicapi dependencies
+
 v0.3.3
 ========================================
 
