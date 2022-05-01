@@ -1,6 +1,6 @@
 from mopidy import backend
 from mopidy.models import Album, Artist, Image, Ref, SearchResult, Track
-from ytmusicapi.parsers.utils import (
+from ytmusicapi.navigation import (
     NAVIGATION_BROWSE_ID,
     SECTION_LIST,
     SINGLE_COLUMN_TAB,

@@ -7,8 +7,8 @@ package_data = {"": ["*"]}
 
 install_requires = [
     "Mopidy>=3,<4",
-    "pytube>=12.0.0,<13.0.0",
-    "ytmusicapi>=0.20.0,<0.21.0",
+    "pytube>=12.1.0,<13.0.0",
+    "ytmusicapi>=0.22.0,<0.23.0",
 ]
 
 entry_points = {"mopidy.ext": ["ytmusic = mopidy_ytmusic:Extension"]}
