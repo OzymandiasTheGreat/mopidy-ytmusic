@@ -6,6 +6,7 @@ import time
 import pykka
 import requests
 from mopidy import backend
+from ytmusicapi.continuations import get_continuations
 from ytmusicapi.navigation import (
     CAROUSEL_TITLE,
     NAVIGATION_BROWSE_ID,
@@ -14,9 +15,6 @@ from ytmusicapi.navigation import (
     TITLE,
     TITLE_TEXT,
     nav,
-)
-from ytmusicapi.continuations import (
-    get_continuations,
 )
 from ytmusicapi.ytmusic import YTMusic
 

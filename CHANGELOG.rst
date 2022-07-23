@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v0.3.6
+========================================
+
+- Merge pull request #57 from kmac/ytmusicapi-0.22.0
+- Update/fixes for ytmusicapi 0.22.0
+- Merge pull request #52 from viiru-/fix-auth-json-schema
+- Convert auth_json from String to Path
+
 v0.3.5
 ========================================
 
