@@ -901,7 +901,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 ):
                     songartists = artists
                 else:
-                    songartists = [Artist(name=song["artists"])]
+                    songartists = [Artist(name=artistname)]
                 self.TRACKS[song["videoId"]] = Track(
                     uri=f"ytmusic:track:{song['videoId']}",
                     name=song["title"],
