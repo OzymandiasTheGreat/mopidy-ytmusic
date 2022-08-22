@@ -2,6 +2,12 @@
 Changelog
 *********
 
+v0.3.7
+========================================
+
+- Merge pull request #64 from mikey-austin/master
+- Trying to list the tracks in an album borks with this stack trace:
+
 v0.3.6
 ========================================
 
