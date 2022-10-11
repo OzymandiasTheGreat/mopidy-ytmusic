@@ -647,6 +647,40 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     'YTMusic search failed for query "album"="%s"',
                     " ".join(query["album"]),
                 )
+        elif "uri" in query:
+            uri = query['uri'][0]
+            tracks = []
+            if uri.startswith('ytmusic:album:'):
+                bId, upload = parse_uri(uri)
+                if upload:
+                    try:
+                        res = self.backend.api.get_library_upload_album(bId)
+                        tracks = self.uploadAlbumToTracks(res, bId)
+                    except Exception:
+                        logger.exception(
+                            'YTMusic failed getting tracks for uploaded album "%s"',
+                            bId,
+                        )
+                else:
+                    try:
+                        res = self.backend.api.get_album(bId)
+                        tracks = self.albumToTracks(res, bId)
+                    except Exception:
+                        logger.exception(
+                            'YTMusic failed getting tracks for album "%s"', bId
+                        )
+                tracks = list(tracks)
+                for track in tracks:
+                    bId, _ = parse_uri(track.uri)
+                    self.TRACKS[bId] = track
+                results = SearchResult(
+                    uri="ytmusic:search",
+                    tracks=tracks,
+                    artists=list(),
+                    albums=list(),
+                )
+            else:
+                return None
         else:
             logger.debug(
                 'YTMusic skipping search, unsupported field types "%s"',
