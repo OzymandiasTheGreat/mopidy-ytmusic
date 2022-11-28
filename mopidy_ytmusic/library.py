@@ -407,6 +407,13 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                 logger.exception(
                     "YTMusic failed to get tracks from playlist '%s'", bId
                 )
+        elif uri.startswith("ytmusic:track:"):
+            bId, upload = parse_uri(uri)
+            try:
+                track = self.getTrack(bId)
+                return [Ref.track(uri=track.uri, name=track.name)]
+            except Exception:
+                logger.exception("YTMusic failed to get track.")
         return []
 
     def lookup(self, uri):
@@ -462,6 +469,8 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     )
         if (bId) in self.TRACKS:
             return [self.TRACKS[bId]]
+        else:
+            return [self.getTrack(bId)]
         return []
 
     def get_distinct(self, field, query=None):
@@ -956,6 +965,28 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             ret.append(self.TRACKS[song["videoId"]])
         self.addThumbnails(bId, album)
         return ret
+
+    def getTrack(self, bId):
+       if bId not in self.TRACKS:
+         track = self.backend.api.get_song(bId)
+         tv = track['videoDetails']
+         self.TRACKS[bId] = Track(
+            uri=f"ytmusic:track:{bId}",
+            name=tv['title'],
+            artists=[Artist(name=tv['author'])],
+            album=None,
+            composers=[],
+            performers=[],
+            genre="",
+            track_no=None,
+            date=None,
+            length=(int(tv["lengthSeconds"]) * 1000),
+            bitrate=0,
+            comment="",
+            musicbrainz_id="",
+            last_modified=None,
+         )
+       return self.TRACKS[bId]
 
     def parseSearch(self, results, field=None, queries=[]):
         tracks = set()
