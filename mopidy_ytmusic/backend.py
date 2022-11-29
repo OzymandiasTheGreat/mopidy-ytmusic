@@ -161,18 +161,18 @@ class YTMusicBackend(
     def scrobble_track(self, bId):
         # Called through YTMusicScrobbleListener
         # Let YTMusic know we're playing this track so it will be added to our history.
-        CPN_ALPHABET = ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+        CPN_ALPHABET = (
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+        )
         cpn = "".join(
-            (
-                 CPN_ALPHABET[random.randint(0, 256) & 63] for _ in range(0, 16)
-            )
+            (CPN_ALPHABET[random.randint(0, 256) & 63] for _ in range(0, 16))
         )
         player_response = self.api._send_request(
             "player",
             {
                 "playbackContext": {
                     "contentPlaybackContext": {
-                       "signatureTimestamp": self.playback.signatureTimestamp,
+                        "signatureTimestamp": self.playback.signatureTimestamp,
                     },
                 },
                 "videoId": bId,
@@ -185,7 +185,9 @@ class YTMusicBackend(
             "c": "WEB_REMIX",
         }
         tr = requests.get(
-            player_response["playbackTracking"]["videostatsPlaybackUrl"]["baseUrl"],
+            player_response["playbackTracking"]["videostatsPlaybackUrl"][
+                "baseUrl"
+            ],
             params=params,
             headers=self.api.headers,
             proxies=self.api.proxies,

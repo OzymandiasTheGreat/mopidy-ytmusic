@@ -657,9 +657,9 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
                     " ".join(query["album"]),
                 )
         elif "uri" in query:
-            uri = query['uri'][0]
+            uri = query["uri"][0]
             tracks = []
-            if uri.startswith('ytmusic:album:'):
+            if uri.startswith("ytmusic:album:"):
                 bId, upload = parse_uri(uri)
                 if upload:
                     try:
@@ -967,27 +967,27 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
         return ret
 
     def getTrack(self, bId):
-       if bId not in self.TRACKS:
-         track = self.backend.api.get_song(bId)
-         tv = track['videoDetails']
-         self.TRACKS[bId] = Track(
-            uri=f"ytmusic:track:{bId}",
-            name=tv['title'],
-            artists=[Artist(name=tv['author'])],
-            album=None,
-            composers=[],
-            performers=[],
-            genre="",
-            track_no=None,
-            date=None,
-            length=(int(tv["lengthSeconds"]) * 1000),
-            bitrate=0,
-            comment="",
-            musicbrainz_id="",
-            last_modified=None,
-         )
-         self.addThumbnails(bId, tv['thumbnail'])
-       return self.TRACKS[bId]
+        if bId not in self.TRACKS:
+            track = self.backend.api.get_song(bId)
+            tv = track["videoDetails"]
+            self.TRACKS[bId] = Track(
+                uri=f"ytmusic:track:{bId}",
+                name=tv["title"],
+                artists=[Artist(name=tv["author"])],
+                album=None,
+                composers=[],
+                performers=[],
+                genre="",
+                track_no=None,
+                date=None,
+                length=(int(tv["lengthSeconds"]) * 1000),
+                bitrate=0,
+                comment="",
+                musicbrainz_id="",
+                last_modified=None,
+            )
+            self.addThumbnails(bId, tv["thumbnail"])
+        return self.TRACKS[bId]
 
     def parseSearch(self, results, field=None, queries=[]):
         tracks = set()

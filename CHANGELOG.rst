@@ -2,6 +2,18 @@
 Changelog
 *********
 
+v0.3.8
+========================================
+
+- Fix scrobbling for #58
+- add images for single track lookup
+- widen ytmusicapi version reqs to >= 0.22, < 0.30
+- Quick hack for #67
+- update ytmusicapi version
+- Merge pull request #69 from fatg3erman/feature/browse-album
+- Album lookups always return information that is at least as complete, and usually more so, that anything we may already have from search. So when we parsing those results we should always replace any information we already have cached.
+- Add uri search parameter to permit browsing of album Uris
+
 v0.3.7
 ========================================
 
