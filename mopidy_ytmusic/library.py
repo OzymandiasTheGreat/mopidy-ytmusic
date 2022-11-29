@@ -986,6 +986,7 @@ class YTMusicLibraryProvider(backend.LibraryProvider):
             musicbrainz_id="",
             last_modified=None,
          )
+         self.addThumbnails(bId, tv['thumbnail'])
        return self.TRACKS[bId]
 
     def parseSearch(self, results, field=None, queries=[]):
