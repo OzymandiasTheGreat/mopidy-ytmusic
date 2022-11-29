@@ -161,37 +161,31 @@ class YTMusicBackend(
     def scrobble_track(self, bId):
         # Called through YTMusicScrobbleListener
         # Let YTMusic know we're playing this track so it will be added to our history.
+        CPN_ALPHABET = ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+        cpn = "".join(
+            (
+                 CPN_ALPHABET[random.randint(0, 256) & 63] for _ in range(0, 16)
+            )
+        )
         player_response = self.api._send_request(
             "player",
             {
                 "playbackContext": {
-                    "contentPlaybackContext": {"signatureTimestamp": 18766}
+                    "contentPlaybackContext": {
+                       "signatureTimestamp": self.playback.signatureTimestamp,
+                    },
                 },
-                "video_id": bId,
+                "videoId": bId,
+                "cpn": cpn,
             },
         )
-        trackurl = re.sub(
-            r"plid=",
-            "list=",
-            player_response["playbackTracking"]["videostatsPlaybackUrl"][
-                "baseUrl"
-            ],
-        )
-        CPN_ALPHABET = (
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-        )
         params = {
-            "cpn": "".join(
-                (
-                    CPN_ALPHABET[random.randint(0, 256) & 63]
-                    for _ in range(0, 16)
-                )
-            ),
-            "referrer": "https://music.youtube.com",
+            "cpn": cpn,
             "ver": 2,
+            "c": "WEB_REMIX",
         }
         tr = requests.get(
-            trackurl,
+            player_response["playbackTracking"]["videostatsPlaybackUrl"]["baseUrl"],
             params=params,
             headers=self.api.headers,
             proxies=self.api.proxies,
