@@ -70,4 +70,4 @@ jobs:
       if: ${{ github.ref == 'refs/heads/master' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: hub release create -F /tmp/release.txt -a dist/Mopidy-YTMusic-${rel}.tar.gz -a dist/Mopidy_YTMusic-${rel}-py3-none-any.whl v${rel}
+      run: hub release create -F /tmp/release.txt -a dist/mopidy_ytmusic-${rel}.tar.gz -a dist/mopidy_ytmusic-${rel}-py3-none-any.whl v${rel}
