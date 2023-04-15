@@ -17,7 +17,7 @@ class SetupCommand(commands.Command):
     help = "Generate auth.json"
 
     def run(self, args, config):
-        from ytmusicapi.ytmusic import YTMusic
+        from ytmusicapi import setup
 
         filepath = input(
             "Enter the path where you want to save auth.json [default=current dir]: "
@@ -37,7 +37,7 @@ class SetupCommand(commands.Command):
         )
         print("Then paste (CTRL+SHIFT+V) them here and press CTRL+D.")
         try:
-            print(YTMusic.setup(filepath=str(path)))
+            print(setup(filepath=str(path)))
         except Exception:
             logger.exception("YTMusic setup failed")
             return 1
@@ -54,7 +54,7 @@ class ReSetupCommand(commands.Command):
     help = "Regenerate auth.json"
 
     def run(self, args, config):
-        from ytmusicapi.ytmusic import YTMusic
+        from ytmusicapi import setup
 
         path = config["ytmusic"]["auth_json"]
         if not path:
@@ -69,7 +69,7 @@ class ReSetupCommand(commands.Command):
         )
         print("Then paste (CTRL+SHIFT+V) them here and press CTRL+D.")
         try:
-            print(YTMusic.setup(filepath=str(path)))
+            print(setup(filepath=str(path)))
         except Exception:
             logger.exception("YTMusic setup failed")
             return 1

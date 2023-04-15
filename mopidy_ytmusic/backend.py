@@ -16,7 +16,7 @@ from ytmusicapi.navigation import (
     TITLE_TEXT,
     nav,
 )
-from ytmusicapi.ytmusic import YTMusic
+from ytmusicapi import setup
 
 from mopidy_ytmusic import logger
 
@@ -62,9 +62,9 @@ class YTMusicBackend(
             self.auth = True
 
         if self.auth:
-            self.api = YTMusic(self._ytmusicapi_auth_json)
+            self.api = setup(self._ytmusicapi_auth_json)
         else:
-            self.api = YTMusic()
+            self.api = setup()
 
         self.playback = YTMusicPlaybackProvider(audio=audio, backend=self)
         self.library = YTMusicLibraryProvider(backend=self)
