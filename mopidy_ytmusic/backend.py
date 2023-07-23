@@ -67,9 +67,9 @@ class YTMusicBackend(
             self.oauth = True
 
         if self.auth and not self.oauth:
-            self.api = YTMusic(self._ytmusicapi_auth_json)
+            self.api = YTMusic(auth=self._ytmusicapi_auth_json)
         elif self.oauth:
-            self.api = YTMusic(self._ytmusicapi_oauth_json)
+            self.api = YTMusic(auth=self._ytmusicapi_oauth_json)
         else:
             self.api = YTMusic()
 

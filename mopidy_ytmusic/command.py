@@ -76,7 +76,7 @@ class ReSetupCommand(commands.Command):
         else:
             print("Updating via oauth, follow the instructions from ytmusicapi")
         try:
-            print(YTMusic(path))
+            print(YTMusic(auth=path))
         except Exception:
             logger.exception("YTMusic setup failed")
             return 1
