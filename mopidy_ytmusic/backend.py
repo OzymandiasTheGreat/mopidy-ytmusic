@@ -16,7 +16,7 @@ from ytmusicapi.navigation import (
     TITLE_TEXT,
     nav,
 )
-from ytmusicapi import setup
+from ytmusicapi import YTMusic
 
 from mopidy_ytmusic import logger
 
@@ -36,6 +36,7 @@ class YTMusicBackend(
         self.audio = audio
         self.uri_schemes = ["ytmusic"]
         self.auth = False
+        self.oauth = False
 
         self._auto_playlist_refresh_rate = (
             config["ytmusic"]["auto_playlist_refresh"] * 60
@@ -61,10 +62,16 @@ class YTMusicBackend(
             self._ytmusicapi_auth_json = config["ytmusic"]["auth_json"]
             self.auth = True
 
-        if self.auth:
-            self.api = setup(self._ytmusicapi_auth_json)
+        if config["ytmusic"]["oauth_json"]:
+            self._ytmusicapi_oauth_json = config["ytmusic"]["oauth_json"]
+            self.oauth = True
+
+        if self.auth and not self.oauth:
+            self.api = YTMusic(self._ytmusicapi_auth_json)
+        elif self.oauth:
+            self.api = YTMusic(self._ytmusicapi_oauth_json)
         else:
-            self.api = setup()
+            self.api = YTMusic()
 
         self.playback = YTMusicPlaybackProvider(audio=audio, backend=self)
         self.library = YTMusicLibraryProvider(backend=self)
@@ -103,6 +110,7 @@ class YTMusicBackend(
     def _get_youtube_player(self):
         # Refresh our js player URL so YDL can decode the signature correctly.
         try:
+            self.api.headers.pop('filepath', None)
             response = requests.get(
                 "https://music.youtube.com",
                 headers=self.api.headers,
