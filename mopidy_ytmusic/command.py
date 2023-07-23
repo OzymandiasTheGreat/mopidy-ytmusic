@@ -17,7 +17,7 @@ class SetupCommand(commands.Command):
     help = "Generate auth.json"
 
     def run(self, args, config):
-        from ytmusicapi import setup
+        from ytmusicapi import YTMusic
 
         filepath = input(
             "Enter the path where you want to save auth.json [default=current dir]: "
@@ -37,7 +37,7 @@ class SetupCommand(commands.Command):
         )
         print("Then paste (CTRL+SHIFT+V) them here and press CTRL+D.")
         try:
-            print(setup(filepath=str(path)))
+            print(YTMusic(filepath=str(path)))
         except Exception:
             logger.exception("YTMusic setup failed")
             return 1
@@ -54,22 +54,29 @@ class ReSetupCommand(commands.Command):
     help = "Regenerate auth.json"
 
     def run(self, args, config):
-        from ytmusicapi import setup
+        from ytmusicapi import YTMusic
 
         path = config["ytmusic"]["auth_json"]
+        usingOauth = False
         if not path:
             logger.error("auth_json path not defined in config")
             return 1
+        if config["ytmusic"]["oauth_json"] is not None:
+            path = config["ytmusic"]["oauth_json"]
+            usingOauth = True
         print('Updating credentials in  "' + str(path) + '"')
-        print(
-            "Open Youtube Music, open developer tools (F12), go to Network tab,"
-        )
-        print(
-            'right click on a POST request and choose "Copy request headers".'
-        )
-        print("Then paste (CTRL+SHIFT+V) them here and press CTRL+D.")
+        if not usingOauth:
+            print(
+                "Open Youtube Music, open developer tools (F12), go to Network tab,"
+            )
+            print(
+                'right click on a POST request and choose "Copy request headers".'
+            )
+            print("Then paste (CTRL+SHIFT+V) them here and press CTRL+D.")
+        else:
+            print("Updating via oauth, follow the instructions from ytmusicapi")
         try:
-            print(setup(filepath=str(path)))
+            print(YTMusic(path))
         except Exception:
             logger.exception("YTMusic setup failed")
             return 1
