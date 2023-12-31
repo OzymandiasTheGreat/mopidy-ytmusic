@@ -47,7 +47,7 @@ class ReSetupCommand(commands.Command):
     help = "Regenerate auth.json"
 
     def run(self, args, config):
-        from ytmusicapi.setup import setup_oauth
+        from ytmusicapi import YTMusic
 
         path = config["ytmusic"]["auth_json"]
         usingOauth = False
